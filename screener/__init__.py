@@ -1,0 +1,1 @@
+"""Swing-trade screener package."""

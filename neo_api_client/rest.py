@@ -56,19 +56,19 @@ class RESTClientObject(object):
                     request_body = None
                     if body is not None:
                         request_body = json.dumps(body)
-                    response = requests.post(url=url, headers=headers, data=request_body)
+                    response = requests.post(url=url, headers=headers, data=request_body, timeout=15)
                 elif re.search('x-www-form-urlencoded', headers['Content-Type'], re.IGNORECASE):
                     request_body = {}
                     if body is not None:
                         request_body["jData"] = json.dumps(body)
-                    response = requests.post(url=url, headers=headers, data=request_body)
+                    response = requests.post(url=url, headers=headers, data=request_body, timeout=15)
                 else:
                     msg = """In-Valid Content-Type in the Header Parameters"""
                     raise ApiException(status=0, reason=msg)
             elif method in ['GET']:
                 if query_params:
                     url += '?' + urlencode(query_params)
-                response = requests.get(url=url, headers=headers)
+                response = requests.get(url=url, headers=headers, timeout=15)
             else:
                 msg = """Cannot call the API with the provided HTTP Method"""
                 raise ApiException(status=0, reason=msg)

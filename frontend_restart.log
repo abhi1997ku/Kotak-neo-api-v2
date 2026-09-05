@@ -1,0 +1,6 @@
+
+> kotak-neo-terminal@0.1.0 dev
+> vite --host 0.0.0.0 --port 5173
+
+'"node"' is not recognized as an internal or external command,
+operable program or batch file.
