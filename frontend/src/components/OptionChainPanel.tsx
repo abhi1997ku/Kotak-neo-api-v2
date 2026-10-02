@@ -1,18 +1,23 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, TrendingUp, TrendingDown } from "lucide-react";
-import { apiClient } from "../services/api";
+import { apiClient, type OptionToken } from "../services/api";
 
 interface OptionChainPanelProps {
   symbol: string;
+  displayName?: string;
 }
 
 interface ChainData {
   strike_price: number;
   call_symbol?: string;
+  call_token?: string;
   call_lot_size?: number;
+  call_ltp?: number;
   put_symbol?: string;
+  put_token?: string;
   put_lot_size?: number;
+  put_ltp?: number;
   call_bid?: number;
   call_ask?: number;
   call_volume?: number;
@@ -23,7 +28,7 @@ interface ChainData {
   put_oi?: number;
 }
 
-export function OptionChainPanel({ symbol }: OptionChainPanelProps) {
+export function OptionChainPanel({ symbol, displayName }: OptionChainPanelProps) {
   const queryClient = useQueryClient();
   const [expiry, setExpiry] = useState<string>("");
   const [showExpiries, setShowExpiries] = useState(false);
@@ -31,8 +36,10 @@ export function OptionChainPanel({ symbol }: OptionChainPanelProps) {
   const [orderSide, setOrderSide] = useState<"BUY" | "SELL" | null>(null);
   const [optionType, setOptionType] = useState<"CE" | "PE">("CE");
   const [tradingSymbol, setTradingSymbol] = useState("");
+  const [scripToken, setScripToken] = useState("");
+  const [feedState, setFeedState] = useState("connecting");
   const [quantity, setQuantity] = useState(1);
-  const [orderType, setOrderType] = useState("MKT");
+  const [orderType, setOrderType] = useState("L");
   const [price, setPrice] = useState("");
   const [orderMessage, setOrderMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,8 +50,12 @@ export function OptionChainPanel({ symbol }: OptionChainPanelProps) {
     setOrderSide(side);
     setOptionType(type);
     setTradingSymbol(type === "CE" ? chain.call_symbol || "" : chain.put_symbol || "");
+    setScripToken(type === "CE" ? chain.call_token || "" : chain.put_token || "");
     const lotSize = Number(type === "CE" ? chain.call_lot_size : chain.put_lot_size) || 1;
     setQuantity(lotSize);
+    const ltp = Number(type === "CE" ? chain.call_ltp : chain.put_ltp);
+    setOrderType("L");
+    setPrice(ltp > 0 ? ltp.toFixed(2) : "");
     setOrderMessage("");
     setShowOrderConfirmation(false);
   };
@@ -54,13 +65,14 @@ export function OptionChainPanel({ symbol }: OptionChainPanelProps) {
     setOrderMessage("");
     try {
       const result = await apiClient.placeOrder({
-        exchange_segment: "nse_fo",
+        exchange_segment: symbol === "SENSEX" ? "bse_fo" : "nse_fo",
         product: "NRML",
         order_type: orderType,
         transaction_type: orderSide || "BUY",
         quantity,
         price: orderType === "L" ? Number(price) : undefined,
         trading_symbol: tradingSymbol.trim(),
+        scrip_token: scripToken || undefined,
         validity: "DAY",
         tag: `terminal-${optionType}-${selectedStrike}`,
       });
@@ -78,19 +90,94 @@ export function OptionChainPanel({ symbol }: OptionChainPanelProps) {
     queryKey: ["option_chain", symbol, expiry],
     queryFn: async () => {
       if (!symbol) return { chains: [], ltp: 0, symbol: "", expiry: "" };
-      try {
-        const response = await apiClient.getOptionChain(symbol, expiry || undefined);
-        return response;
-      } catch (err) {
-        console.error("Option chain error:", err);
-        return { chains: [], ltp: 0, symbol: "", expiry: "" };
-      }
+      return apiClient.getOptionChain(symbol, expiry || undefined);
     },
     enabled: !!symbol,
     staleTime: 0,
     refetchOnMount: "always",
     refetchInterval: false,
   });
+
+  useEffect(() => {
+    setSelectedStrike(null);
+    setOrderSide(null);
+    setTradingSymbol("");
+    setScripToken("");
+    setShowOrderConfirmation(false);
+    setOrderMessage("");
+  }, [expiry, symbol]);
+
+  const tokenSignature = useMemo(() => {
+    const exchangeSegment = symbol === "SENSEX" ? "bse_fo" : "nse_fo";
+    const tokens = ((data?.chains || []) as ChainData[]).flatMap((chain) => [
+      chain.call_token ? `${exchangeSegment}|${chain.call_token}` : "",
+      chain.put_token ? `${exchangeSegment}|${chain.put_token}` : "",
+    ]).filter(Boolean);
+    return [...new Set(tokens)].join(",");
+  }, [data?.chains, symbol]);
+
+  useEffect(() => {
+    if (!tokenSignature) {
+      setFeedState("unavailable");
+      return;
+    }
+
+    let stopped = false;
+    let reconnectTimer: number | undefined;
+    let socket: WebSocket | undefined;
+    const tokens: OptionToken[] = tokenSignature.split(",").map((entry) => {
+      const [exchange_segment, instrument_token] = entry.split("|", 2);
+      return { exchange_segment, instrument_token };
+    });
+
+    const connect = () => {
+      if (stopped) return;
+      setFeedState("connecting");
+      socket = apiClient.createOptionChainStream(tokens);
+      socket.onopen = () => setFeedState("connected");
+      socket.onmessage = (message) => {
+        let event: any;
+        try {
+          event = JSON.parse(message.data);
+        } catch {
+          return;
+        }
+        if (event.type === "status") {
+          if (event.state === "unauthorized") window.dispatchEvent(new Event("kotak:unauthorized"));
+          setFeedState(event.state === "connected" ? "connected" : event.state || "unavailable");
+          return;
+        }
+        if (event.type !== "quote" || !event.instrument_token) return;
+
+        setFeedState("live");
+        queryClient.setQueryData<any>(["option_chain", symbol, expiry], (current: any) => {
+          if (!current?.chains) return current;
+          return {
+            ...current,
+            chains: current.chains.map((chain: ChainData) => {
+              if (chain.call_token === event.instrument_token) return { ...chain, call_ltp: event.ltp };
+              if (chain.put_token === event.instrument_token) return { ...chain, put_ltp: event.ltp };
+              return chain;
+            }),
+            updated_at: event.updated_at || current.updated_at,
+          };
+        });
+      };
+      socket.onerror = () => setFeedState("reconnecting");
+      socket.onclose = () => {
+        if (stopped) return;
+        setFeedState("reconnecting");
+        reconnectTimer = window.setTimeout(connect, 3000);
+      };
+    };
+
+    connect();
+    return () => {
+      stopped = true;
+      if (reconnectTimer !== undefined) window.clearTimeout(reconnectTimer);
+      socket?.close();
+    };
+  }, [expiry, queryClient, symbol, tokenSignature]);
 
   if (!symbol) {
     return (
@@ -104,7 +191,7 @@ export function OptionChainPanel({ symbol }: OptionChainPanelProps) {
   if (isLoading) {
     return (
       <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
-        <h3 className="mb-3 text-sm uppercase tracking-wide text-slate-400">Option Chain - {symbol}</h3>
+        <h3 className="mb-3 text-sm uppercase tracking-wide text-slate-400">Option Chain - {displayName || symbol}</h3>
         <div className="text-center text-sm text-slate-500">Loading...</div>
       </div>
     );
@@ -113,7 +200,7 @@ export function OptionChainPanel({ symbol }: OptionChainPanelProps) {
   if (error) {
     return (
       <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
-        <h3 className="mb-3 text-sm uppercase tracking-wide text-slate-400">Option Chain - {symbol}</h3>
+        <h3 className="mb-3 text-sm uppercase tracking-wide text-slate-400">Option Chain - {displayName || symbol}</h3>
         <div className="rounded bg-red-500/10 p-2 text-xs text-red-300">
           Failed to load option chain
         </div>
@@ -133,24 +220,27 @@ export function OptionChainPanel({ symbol }: OptionChainPanelProps) {
     return chainDiff < closestDiff ? chain : closest;
   }, null);
 
-  // Determine moneyness for coloring
   const getMoneyness = (strike: number) => {
-    const diff = strike - atmReference;
-    if (Math.abs(diff) < 100) return "atm";
-    if (diff > 0) return "otm";
-    return "itm";
+    if (strike === atmStrike?.strike_price) return "atm";
+    return strike < (atmStrike?.strike_price || atmReference) ? "itm" : "otm";
   };
+
+  const formatOptionPrice = (value: number | undefined) =>
+    value != null && Number.isFinite(value) && value > 0 ? value.toFixed(2) : "—";
 
   return (
     <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h3 className="text-sm uppercase tracking-wide text-slate-400">
-            Option Chain - {symbol}
+            Option Chain - {displayName || symbol}
           </h3>
           <p className="text-xs text-slate-500 mt-1">LTP: ₹{ltp.toFixed(2)}</p>
         </div>
-        <div className="relative">
+        <div className="relative flex items-center gap-3">
+          <span className={`text-xs ${feedState === "live" ? "text-emerald-300" : "text-slate-500"}`}>
+            {feedState === "live" ? "Live option prices" : feedState === "connected" ? "Feed connected · waiting for ticks" : feedState === "reconnecting" ? "Reconnecting live feed" : feedState === "connecting" ? "Connecting live feed" : "Live feed unavailable"}
+          </span>
           <button
             onClick={() => setShowExpiries(!showExpiries)}
             className="flex items-center gap-2 rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700"
@@ -183,22 +273,35 @@ export function OptionChainPanel({ symbol }: OptionChainPanelProps) {
         </div>
       </div>
 
+      {data?.message && chains.length > 0 && (
+        <p className="mb-3 rounded border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+          {data.message}
+        </p>
+      )}
+
       {chains.length === 0 ? (
         <div className="text-center text-sm text-slate-500">{data?.message || "No option chain data available"}</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-800/50 border-b border-slate-700">
-                <th className="px-2 py-2 text-left text-slate-400 font-semibold">Call OI</th>
+              <tr className="bg-slate-800/50 text-center">
+                <th colSpan={5} className="px-2 py-2 font-semibold text-emerald-300">CALL / CE</th>
+                <th rowSpan={2} className="bg-slate-800/70 px-3 py-2 font-bold text-slate-200">Strike</th>
+                <th colSpan={5} className="px-2 py-2 font-semibold text-red-300">PUT / PE</th>
+                <th rowSpan={2} className="px-2 py-2 text-slate-400 font-semibold">Trade</th>
+              </tr>
+              <tr className="border-b border-slate-700 bg-slate-800/50">
+                <th className="px-2 py-2 text-left text-slate-400 font-semibold">OI</th>
                 <th className="px-2 py-2 text-right text-slate-400 font-semibold">Vol</th>
                 <th className="px-2 py-2 text-right text-slate-400 font-semibold">Bid</th>
                 <th className="px-2 py-2 text-right text-slate-400 font-semibold">Ask</th>
-                <th className="px-3 py-2 text-center text-slate-300 font-bold bg-slate-800/70">Strike</th>
+                <th className="px-2 py-2 text-right text-slate-400 font-semibold">LTP</th>
+                <th className="px-2 py-2 text-left text-slate-400 font-semibold">LTP</th>
                 <th className="px-2 py-2 text-left text-slate-400 font-semibold">Bid</th>
                 <th className="px-2 py-2 text-left text-slate-400 font-semibold">Ask</th>
                 <th className="px-2 py-2 text-left text-slate-400 font-semibold">Vol</th>
-                <th className="px-2 py-2 text-left text-slate-400 font-semibold">Put OI</th>
+                <th className="px-2 py-2 text-left text-slate-400 font-semibold">OI</th>
               </tr>
             </thead>
             <tbody>
@@ -230,9 +333,22 @@ export function OptionChainPanel({ symbol }: OptionChainPanelProps) {
                       {chain.call_ask?.toFixed(2) || "-"}
                     </td>
 
+                    {/* Call LTP */}
+                    <td className="px-2 py-2 text-right font-semibold text-emerald-200">
+                      {formatOptionPrice(chain.call_ltp)}
+                    </td>
+
                     {/* Strike Price - Center */}
                     <td className={`px-3 py-2 text-center font-bold ${strikeColor} ${isATM ? "bg-slate-800/70" : ""}`}>
-                      {chain.strike_price}
+                      <div>{chain.strike_price}</div>
+                      <div className="mt-0.5 text-[9px] font-medium text-slate-500">
+                        {isATM ? "ATM" : `CE ${chain.strike_price < (atmStrike?.strike_price || 0) ? "ITM" : "OTM"} · PE ${chain.strike_price > (atmStrike?.strike_price || 0) ? "ITM" : "OTM"}`}
+                      </div>
+                    </td>
+
+                    {/* Put LTP */}
+                    <td className="px-2 py-2 text-left font-semibold text-red-200">
+                      {formatOptionPrice(chain.put_ltp)}
                     </td>
 
                     {/* Put Bid */}
@@ -250,6 +366,43 @@ export function OptionChainPanel({ symbol }: OptionChainPanelProps) {
 
                     {/* Put OI */}
                     <td className="px-2 py-2 text-left text-slate-500">{(chain.put_oi || 0) / 1000}k</td>
+
+                    <td className="px-2 py-2">
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          title="Buy call"
+                          onClick={(event) => { event.stopPropagation(); openOrderTicket("BUY", "CE", chain); }}
+                          className="rounded bg-emerald-900/40 px-1.5 py-1 text-[10px] font-semibold text-emerald-300 hover:bg-emerald-900/70"
+                        >
+                          CE Buy
+                        </button>
+                        <button
+                          type="button"
+                          title="Sell call"
+                          onClick={(event) => { event.stopPropagation(); openOrderTicket("SELL", "CE", chain); }}
+                          className="rounded bg-red-900/40 px-1.5 py-1 text-[10px] font-semibold text-red-300 hover:bg-red-900/70"
+                        >
+                          CE Sell
+                        </button>
+                        <button
+                          type="button"
+                          title="Buy put"
+                          onClick={(event) => { event.stopPropagation(); openOrderTicket("BUY", "PE", chain); }}
+                          className="rounded bg-emerald-900/40 px-1.5 py-1 text-[10px] font-semibold text-emerald-300 hover:bg-emerald-900/70"
+                        >
+                          PE Buy
+                        </button>
+                        <button
+                          type="button"
+                          title="Sell put"
+                          onClick={(event) => { event.stopPropagation(); openOrderTicket("SELL", "PE", chain); }}
+                          className="rounded bg-red-900/40 px-1.5 py-1 text-[10px] font-semibold text-red-300 hover:bg-red-900/70"
+                        >
+                          PE Sell
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}

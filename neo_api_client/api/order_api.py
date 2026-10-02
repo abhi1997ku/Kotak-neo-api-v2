@@ -36,6 +36,8 @@ class OrderAPI(object):
     ):
         try:
             header_params = {
+                "accept": "application/json",
+                "Authorization": self.api_client.configuration.consumer_key,
                 "Sid": self.api_client.configuration.edit_sid,
                 "Auth": self.api_client.configuration.edit_token,
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -66,9 +68,10 @@ class OrderAPI(object):
                 "tsv": trailing_sl_value,
                 "os": self.order_source,
             }
+            body_params = {key: value for key, value in body_params.items() if value is not None}
 
-            query_params = {"sId": self.api_client.configuration.serverId}
             URL = self.api_client.configuration.get_url_details("place_order")
+            query_params = {"sId": self.api_client.configuration.serverId}
             orders_resp = self.rest_client.request(
                 url=URL, method='POST',
                 query_params=query_params,
@@ -76,7 +79,18 @@ class OrderAPI(object):
                 body=body_params
             )
 
-            return orders_resp.json()
+            try:
+                result = orders_resp.json()
+                if isinstance(result, dict):
+                    result["_http_status"] = orders_resp.status_code
+                return result
+            except ValueError as ex:
+                return {
+                    "error": [{
+                        "message": f"Broker order response was not valid JSON (HTTP {orders_resp.status_code}): {orders_resp.text[:500]}"
+                    }],
+                    "parse_error": str(ex),
+                }
         except ApiException as ex:
             return {"error": ex}
 

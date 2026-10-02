@@ -6,6 +6,7 @@ from backend.kotak_client import KotakClient
 class DummyClient:
     def __init__(self):
         self.calls = []
+        self.configuration = SimpleNamespace(edit_token="token", edit_sid="sid")
 
     def positions(self):
         self.calls.append('positions')

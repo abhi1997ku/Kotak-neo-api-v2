@@ -3,11 +3,15 @@ Data fetcher for real market data from Yahoo Finance.
 Supports both Indian and international stock symbols.
 """
 
-import yfinance as yf
 import pandas as pd
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 import logging
+
+try:
+    import yfinance as yf
+except ImportError:  # pragma: no cover - depends on optional runtime package
+    yf = None
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +75,10 @@ class DataFetcher:
             return self.cache[cache_key]
 
         try:
+            if yf is None:
+                logger.warning("yfinance is not installed; real market data is unavailable")
+                return None
+
             # Convert NSE symbol to Yahoo Finance format if needed
             yahoo_symbol = self.get_yahoo_symbol(symbol) if not symbol.endswith(".NS") else symbol
 

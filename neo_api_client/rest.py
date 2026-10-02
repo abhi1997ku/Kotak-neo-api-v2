@@ -3,9 +3,21 @@ from __future__ import absolute_import
 import json
 import logging
 import re
+import socket
 import requests
+from urllib3.util import connection as urllib3_connection
 from six.moves.urllib.parse import urlencode
 from neo_api_client.exceptions import ApiException
+
+
+# Kotak's static-IP order validation currently supports IPv4 only. Its API host
+# also advertises AAAA records, which urllib3 may prefer over the whitelisted
+# IPv4. Pin this SDK's requests transport so login and trading share one IP.
+def _ipv4_only_address_family():
+    return socket.AF_INET
+
+
+urllib3_connection.allowed_gai_family = _ipv4_only_address_family
 
 
 class RESTClientObject(object):

@@ -1,4 +1,5 @@
 import requests
+import neo_api_client.settings
 
 
 class OrderReportAPI(object):

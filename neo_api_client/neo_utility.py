@@ -75,7 +75,7 @@ class NeoUtility:
                 else:
                     base_url = UAT_BASE_URL
 
-            return base_url
+            return (base_url or '').rstrip('/')
         else:
             raise ApiValueError("Either UAT or PROD in Environment accepted")
 
@@ -104,9 +104,9 @@ class NeoUtility:
     def get_url_details(self, api_info):
         domain_info = self.get_domain()
         if self.host.lower().strip() == 'prod':
-            domain_info += '/' + PROD_URL.get(api_info)
+            domain_info += '/' + (PROD_URL.get(api_info) or '').lstrip('/')
         else:
-            domain_info += '/' + UAT_URL.get(api_info)
+            domain_info += '/' + (UAT_URL.get(api_info) or '').lstrip('/')
 
         return domain_info
 

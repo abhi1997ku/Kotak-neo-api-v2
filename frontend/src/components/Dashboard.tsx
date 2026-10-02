@@ -8,9 +8,11 @@ import { MarginPanel } from "./MarginPanel";
 import { SearchSuggestions } from "./SearchSuggestions";
 import { SearchResultsPanel } from "./SearchResultsPanel";
 import { OptionChainPanel } from "./OptionChainPanel";
+import { EquityOrderPanel } from "./EquityOrderPanel";
 import { ScreenerPanel } from "./ScreenerPanel";
+import { WatchlistPanel } from "./WatchlistPanel";
 import { useState } from "react";
-import { apiClient } from "../services/api";
+import { type WatchlistItem } from "../services/api";
 
 export function Dashboard() {
   const { logout } = useAuth();
@@ -28,19 +30,41 @@ export function Dashboard() {
   };
 
   const handleSelectSymbol = async (symbol: any) => {
-    setSelectedSymbol(symbol);
+    const normalized = String(symbol.symbol || "").toUpperCase().replace(/[ _-]/g, "");
+    const optionChainSymbol = ["NIFTY", "NIFTY50"].includes(normalized)
+      ? "NIFTY"
+      : ["BANKNIFTY", "NIFTYBANK"].includes(normalized)
+        ? "BANKNIFTY"
+        : normalized === "SENSEX"
+          ? "SENSEX"
+          : undefined;
+    setSelectedSymbol(optionChainSymbol ? { ...symbol, option_chain_symbol: optionChainSymbol, exchange: "INDEX" } : symbol);
     setSearchQuery(symbol.symbol);
   };
 
-  const handleWatchlistClick = (value: string) => {
-    setSearchQuery(value);
-    setSelectedSymbol({ symbol: value });
+  const handleWatchlistStockClick = (stock: WatchlistItem) => {
+    setSearchQuery(stock.symbol);
+    setSelectedSymbol({
+      symbol: stock.symbol,
+      trading_symbol: stock.trading_symbol || `${stock.symbol}-EQ`,
+      instrument_token: stock.instrument_token,
+      name: stock.name,
+      exchange: "NSE",
+    });
+  };
+
+  const handleWatchlistIndexClick = (index: WatchlistItem) => {
+    handleSelectSymbol({
+      ...index,
+      name: index.name,
+      exchange: "INDEX",
+    });
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <div className="flex min-h-screen">
-        <aside className="w-72 border-r border-slate-800 bg-slate-900/80 p-4">
+        <aside className="h-screen w-72 shrink-0 self-start overflow-y-auto border-r border-slate-800 bg-slate-900/80 p-4">
           <div className="mb-8">
             <h1 className="text-xl font-bold">Kotak Neo Terminal</h1>
             <p className="text-sm text-slate-400">Personal trading dashboard</p>
@@ -52,18 +76,17 @@ export function Dashboard() {
           </div>
 
           <div className="mb-6">
-            <h2 className="mb-2 text-xs uppercase tracking-wide text-slate-400">Watchlist</h2>
-            <ul className="space-y-2 text-sm">
-              <li onClick={() => handleWatchlistClick("NIFTY 50")} className="cursor-pointer rounded-md bg-slate-800 px-3 py-2 hover:bg-slate-700">NIFTY 50</li>
-              <li onClick={() => handleWatchlistClick("BANKNIFTY")} className="cursor-pointer rounded-md bg-slate-800 px-3 py-2 hover:bg-slate-700">BANKNIFTY</li>
-              <li onClick={() => handleWatchlistClick("RELIANCE")} className="cursor-pointer rounded-md bg-slate-800 px-3 py-2 hover:bg-slate-700">RELIANCE</li>
-            </ul>
-          </div>
-
-          <div className="mb-6">
             <h2 className="mb-2 text-xs uppercase tracking-wide text-slate-400">Search</h2>
             <SearchSuggestions onSelectSymbol={handleSelectSymbol} />
           </div>
+
+          {searchQuery && searchResults.length > 0 && (
+            <SearchResultsPanel
+              results={searchResults}
+              query={searchQuery}
+              onSelectResult={handleSelectSymbol}
+            />
+          )}
 
           <div className="space-y-2 border-t border-slate-800 pt-4">
             <button
@@ -81,38 +104,45 @@ export function Dashboard() {
               Logout
             </button>
           </div>
+
+          <div className="mt-6 border-t border-slate-800 pt-4">
+            <ScreenerPanel />
+          </div>
         </aside>
 
         <main className="flex-1 overflow-auto p-4">
           <div className="space-y-4">
-            <ScreenerPanel />
+            <WatchlistPanel
+              view="indices"
+              onSelectStock={handleWatchlistStockClick}
+              onSelectIndex={handleWatchlistIndexClick}
+              selectedSymbol={selectedSymbol?.symbol}
+            />
 
-            {/* Option Chain Panel */}
-            {selectedSymbol && (
-              <OptionChainPanel symbol={selectedSymbol.symbol} />
+            <PositionsPanel />
+            <OrdersPanel />
+
+            {selectedSymbol?.option_chain_symbol && (
+              <OptionChainPanel symbol={selectedSymbol.option_chain_symbol} displayName={selectedSymbol.name} />
             )}
 
-            {/* Search Results */}
-            {searchQuery && searchResults.length > 0 && (
-              <SearchResultsPanel 
-                results={searchResults} 
-                query={searchQuery} 
-                onSelectResult={handleSelectSymbol}
+            <HoldingsPanel />
+
+            {selectedSymbol?.exchange === "NSE" && !selectedSymbol.option_chain_symbol && (
+              <EquityOrderPanel
+                symbol={selectedSymbol.symbol}
+                tradingSymbol={selectedSymbol.trading_symbol}
+                name={selectedSymbol.name}
+                instrumentToken={selectedSymbol.instrument_token}
               />
             )}
 
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <div className="lg:col-span-2">
-                <OrdersPanel />
-              </div>
-              <div>
-                <PositionsPanel />
-              </div>
-            </div>
-
-            <div>
-              <HoldingsPanel />
-            </div>
+            <WatchlistPanel
+              view="stocks"
+              onSelectStock={handleWatchlistStockClick}
+              onSelectIndex={handleWatchlistIndexClick}
+              selectedSymbol={selectedSymbol?.symbol}
+            />
           </div>
         </main>
       </div>

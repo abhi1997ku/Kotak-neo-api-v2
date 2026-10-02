@@ -31,20 +31,21 @@ class SessionManager:
         if not mpin:
             raise ValueError("MPIN is required.")
 
-        self.client = KotakClient()
+        client = KotakClient()
+        try:
+            client.login(totp=totp.strip())
+            client.login_with_mpin(mpin=mpin.strip())
+        except Exception:
+            self.session = None
+            self.client = None
+            raise
 
-        self.client.login(totp=totp)
-        self.client.login_with_mpin(mpin=mpin)
-
-        self.session = self.client.session
+        self.client = client
+        self.session = client.session
 
         return {
             "status": "success",
             "message": "Successfully authenticated",
-            "view_token": self.session.view_token,
-            "trade_token": self.session.trade_token,
-            "sid": self.session.sid,
-            "edit_sid": self.session.edit_sid,
         }
 
     def get_client(self) -> Optional[KotakClient]:

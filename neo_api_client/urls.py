@@ -2,6 +2,7 @@
 #                               WebSocket URLs
 #############################################################################
 WEBSOCKET_URL = "wss://mlhsm.kotaksecurities.com"
+SFEED_WEBSOCKET_URL = "wss://sfeed.kotaksecurities.com/apifeed"
 
 #############################################################################
 #                               UAT BASE URLs

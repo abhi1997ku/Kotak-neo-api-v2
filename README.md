@@ -1,337 +1,139 @@
-# Kotak Neo Python SDK Development
+# Kotak Neo Personal Trading Terminal
 
-- API version: 2.0.0
-- Package version: v2.0.0
+A local React + FastAPI trading dashboard for a single Kotak Neo account. It includes watchlists and live quotes, option chains, positions, holdings, orders, and a swing-trade screener. The repository also contains the Kotak Neo Python SDK and its endpoint references under [docs](docs/).
 
-## Requirements.
+## Requirements
 
-Python 3.10 to 3.13
+- Windows 10/11 with PowerShell and Git for Windows
+- Python 3.10-3.13 (Python 3.12 recommended)
+- Node.js 18 or 20+ with npm
+- A Kotak Neo account with an active Trade API application
 
-## Installation & Usage
-### pip install
+## First-time setup on Windows
 
-If the python package is hosted on a repository, you can install directly using:
+Run these commands from the repository root after cloning it.
 
-```sh
-pip install "git+https://github.com/Kotak-Neo/Kotak-neo-api-v2.git@v2.0.2#egg=neo_api_client"
-```
-NOTE: For switching the version, try .git@[version number] in the above URL example .git@v1.0.0
+### 1. Configure Kotak Neo
 
-If you are updating your package please use below command to install
-```sh
-pip install --force-reinstall "git+https://github.com/Kotak-Neo/Kotak-neo-api-v2.git@v2.0.2#egg=neo_api_client"
-```
-(you may need to run `pip` with root permission: `sudo pip install -e "`)
+Create your local environment file:
 
-Then import the package:
-```python
-import neo_api_client
+```powershell
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+notepad .env
 ```
 
-### Setuptools
+Set these values in the root `.env`:
 
-Install via [Setuptools]
+| Variable | Value |
+| --- | --- |
+| `KOTAK_CONSUMER_KEY` | Consumer key from your active Kotak Neo Trade API application |
+| `KOTAK_MOBILE` | Mobile number registered with Kotak, including country code, such as `+91...` |
+| `KOTAK_UCC` | Your Kotak Neo UCC |
+| `KOTAK_ENVIRONMENT` | Leave as `prod` for the live Kotak service |
 
-```sh
-python setup.py install --user
-```
-(or `sudo python setup.py install` to install the package for all users)
+The login page asks for a fresh six-digit TOTP and your MPIN. Do not save a TOTP code in `.env`; it expires quickly. The backend reads this root `.env` file. It does not read `backend/.env`.
 
-Then import the package:
-```python
-import neo_api_client
-```
+In the Kotak API application settings, whitelist the public outbound IP address of the computer or server running the backend. If the backend runs on another machine or in the cloud, whitelist that host's egress IP, not the browser computer's address. Use a static egress IP if the address changes.
 
-## Getting Started
+Keep `.env` private. It is excluded from Git.
 
-Please follow the [installation procedure](#installation--usage) and then refer to the sample code below for various API requests:
+### 2. Install backend dependencies
 
-```python
-from neo_api_client import NeoAPI
+Use a supported Python version from 3.10 through 3.13. Replace 3.12 in the command below if needed.
 
-
- 
-# access_token: It is optional. 
-# environment: You pass prod to connect to live server
-# neo_fin_key: It is optional. Pass None.
-# consumer_key: this is the token that is available on your NEO app or website.
-# To get consumer key, login to kotak NEO app or web -> invest tab -> trade api card. Generate application.
-# with default application, you will have a copyable token. Pass this token in consumer_key.
-
-client = NeoAPI(environment='prod', access_token=None, neo_fin_key=None, consumer_key='YOUR_TOKEN')
-
-
-# Login using TOTP
-
-# Complete your TOTP registration from Kotak Securities website. Follow steps mentioned below.
-
-# Visit https://www.kotaksecurities.com/platform/kotak-neo-trade-api/ and select Register for Totp.
-# Totp registration is a one time step where you can register for totp on your mobile and start receiving totps.
-
-# Step 1 - Verify your mobile no with OTP
-
-# Step 2 - Select account, for which you want to register for totp
-
-# Step 3 - Select option to register for totp
-
-# Step 4 - You will receive a QR code, which is valid for 5 minutes
-
-# Step 5 - Open any authenticator app, and scan the QR code
-
-# Step 6 - You will start receiving the Totps on the authenticator apps
-
-# Step 7 - Submit the totp on the QR code page to complete the Totp registration
-
-# mobile_number: registered mobile number with the country code.
-# ucc: Unique Client Code which you will find in mobile application/website under profile section
-# totp: Time-based One-Time Password recieved on google authenticator application
-# totp_login generates the view token and session id used to generate trade token
-client.totp_login(mobile_number="", ucc="", totp='')
-
-# mpin: mpin for your neo account
-# totp_validate generates the trade token
-client.totp_validate(mpin="")
-
-
-
-# Once you have session token after completing 2FA, you can place the order by using below function
-# exchange_segment: Expected values are nse_cm, bse_cm, nse_fo, bse_fo, cde_fo, mcx_fo. 
-# For exchange_segment nse_cm expected product=NRML, CNC, MIS, CO, BO. Add order_type=L, MKT, SL, SL-M. 
-# For exchange_segment bse_cm expected product=NRML, CNC, MIS, CO, BO. Add order_type=L, MKT, SL, SL-M.
-# For exchange_segment nse_fo expected product=NRML, MIS, BO. Add order_type=L, MKT, SL, SL-M.
-# For exchange_segment bse_fo expected product=NRML, MIS. Add order_type=L, MKT, SL, SL-M.
-# For exchange_segment mcx_fo expected product=NRML, MIS. Add order_type=L, MKT, SL, SL-M.
-
-# For exchange_segment cde_fo expected product=NRML, MIS. Add order_type=L, MKT, SL, SL-M.
-
-# product: Expected values are NRML, CNC, MIS, CO, BO, MTF
-# price: scrip price
-# order_type: Expected values are L, MKT, SL, SL-M
-# quantity: The stock quantity(If suppose one lot size of a stock is 25, then in disclosed_quantity you have to pass 25 and not 1)
-# validity: Expected values are DAY, IOC, GTC, EOS, GTD
-# trading_symbol: scrip trading symbol. You will get this value from master scrip file
-# transaction_type: Expected values are B, S
-# amo: Expected values are either YES or NO
-# disclosed_quantity: by default 0. Disclosed quantity (DQ) is a feature that allows traders to only disclose a portion of their order quantity to the market. This feature is useful when trading large quantities of shares. For example, if your quantity is 10, then disclosed_quantity can be between 0 to 10 (only disclosed _quantity will be visible in market depth)
-# market_protection: by default 0. Market protection, also known as Market Price Protection (MPP), is a feature that protects investors from sudden price movements in the stock market. For example, if the Last Traded Price (LTP) is ₹100 and a 5% Market Protection is applied, your order will be placed as a limit order at ₹105. This means your buy order will only be executed if sellers are available at ₹105 or below. If no sellers are available within this range, your order will remain open as a limit order.
-# pf: by default N
-# trigger_price: Price on which ypur order will be open to the market
-# tag: Give your own tag to track the order
-# scrip_token: Applicable only for Bracket Order
-# square_off_type: Applicable only for Bracket Order. Expected Values are 'Absolute' and 'Ticks'.
-# stop_loss_type: Applicable only for bracket Order. Expected Values are 'Absolute' and 'Ticks'.
-# stop_loss_value: Applicable only for Bracket Order
-# square_off_value: Applicable only for Bracket Order
-# last_traded_price: Applicable only for Bracket Order
-# trailing_stop_loss: Applicable only for Bracket Order. Expected Values are 'Y' and 'N'.
-# trailing_sl_value: Applicable only for Bracket Order. Expected Values are 'Y' and 'N'.	
-client.place_order(
-    exchange_segment="",
-    product="",
-    price="",
-    order_type="",
-    quantity="",
-    validity="",
-    trading_symbol="",
-    transaction_type="",
-    amo="NO",
-    disclosed_quantity="0",
-    market_protection="0",
-    pf="N",
-    trigger_price="0",
-    tag=None,
-    scrip_token=None,
-    square_off_type=None,
-    stop_loss_type=None,
-    stop_loss_value=None,
-    square_off_value=None,
-    last_traded_price=None,
-    trailing_stop_loss=None,
-    trailing_sl_value=None,
-)
-
-
-						
-# Modify an order
-# order_id: Order number you'll recieve from the response after placing the order
-# price: scrip price
-# quantity: The stock quantity(If suppose one lot size of a stock is 25, then in disclosed_quantity you have to pass 25 and not 1)
-# disclosed_quantity: by default 0. Disclosed quantity (DQ) is a feature that allows traders to only disclose a portion of their order quantity to the market. This feature is useful when trading large quantities of shares. For example, if your quantity is 10, then disclosed_quantity can be between 0 to 10 (only disclosed _quantity will be visible in market depth)
-# trigger_price: Price on which ypur order will be open to the market
-# validity: Expected values are DAY, IOC, GTC, EOS, GTD
-# order_type: Expected values are L, MKT, SL, SL-M
-client.modify_order(order_id = "", price = "7.0", quantity = "2", disclosed_quantity = "0", trigger_price = "0", validity = "DAY", order_type='')
-
-# Cancel an order
-# order_id: Order number you'll recieve from the response after placing the order
-client.cancel_order(order_id = "")
-
-# order_id: Order number you'll recieve from the response after placing the order
-# isVerify: isVerify is an optional param. Default value is 'False'. If isVerify is True, we will first check the status of the given order. If the order status is not 'rejected', 'cancelled', 'traded', or 'completed', we will proceed to cancel the order using the cancel_order function. Otherwise, we will display the order status to the user instead.
-# amo: It specifies whether its an after market order. Expected values are YES and NO
-# This request will check whether your order is rejected, cancelled, complete or traded. If any of this is true, your order will not be cancelled. This will be rejected with the rejection reson. 
-# If this is not the case, the your order will be cancelled.
-client.cancel_order(order_id = "", amo = "", isVerify=True)
-
-
-# Cancel cover order
-# order_id: Order number you'll recieve from the response after placing the order
-client.cancel_cover_order(order_id = "")
-# order_id: Order number you'll recieve from the response after placing the order
-# isVerify: isVerify is an optional param. Default value is 'False'. If isVerify is True, we will first check the status of the given order. If the order status is not 'rejected', 'cancelled', 'traded', or 'completed', we will proceed to cancel the order using the cancel_order function. Otherwise, we will display the order status to the user instead.
-# This request will check whether your order is rejected, cancelled, complete or traded. If any of this is true, your order will not be cancelled. This will be rejected with the rejection reson. 
-# amo: It specifies whether its an after market order. Expected values are YES and NO
-client.cancel_cover_order(order_id = "", amo = "", isVerify=False)
-
-# Cancel bracket order
-# Cancel cover order
-# order_id: Order number you'll recieve from the response after placing the order
-client.cancel_bracket_order(order_id = "")
-# order_id: Order number you'll recieve from the response after placing the order
-# isVerify: isVerify is an optional param. Default value is 'False'. If isVerify is True, we will first check the status of the given order. If the order status is not 'rejected', 'cancelled', 'traded', or 'completed', we will proceed to cancel the order using the cancel_order function. Otherwise, we will display the order status to the user instead.
-# This request will check whether your order is rejected, cancelled, complete or traded. If any of this is true, your order will not be cancelled. This will be rejected with the rejection reson. 
-# amo: It specifies whether its an after market order. Expected values are YES and NO
-client.cancel_bracket_order(order_id = "", amo = "", isVerify=False)
-
-
-# Get Order Book
-# The function retrieves a list of orders in the order book.
-client.order_report()
-
-# Get Order History
-# The function retrieves the order history for a given order ID.
-# order_id: Order number you'll recieve from the response after placing the order
-client.order_history(order_id = "")
-
-# Get Trade Book
-# The function retrieves a filtered list of trades.
-client.trade_report()
-
-# Get Detailed Trade Report for specific order id. 
-# The function retrieves a filtered list of trades.
-# order_id: Order number you'll recieve from the response after placing the order
-client.trade_report(order_id = "")
-
-# Get Positions
-# The function retrieves a list of positions
-client.positions()
-
-# Get Portfolio Holdings
-# The function retrieves the current holdings for the portfolio
-client.holdings()
-
-# Get Limits
-# The function retrieves the limits available for the given segment, exchange and product
-# segment: Expected values are CASH, CUR, FO, ALL. Default value is 'ALL'
-# exchange: Expected values are ALL, NSE, BSE
-# product: Expected values are NRML, CNC, MIS, ALL
-client.limits(segment="", exchange="", product="")
-
-# Get Margin required for Equity orders. 
-# The function calculates the margin required for a given trade.
-# exchange_segment: Expected values are nse_cm, bse_cm, nse_fo, bse_fo, cde_fo, mcx_fo. 
-# price: scrip price
-# order_type: Expected values are L, MKT, SL, SL-M
-# product: Expected values are NRML, CNC, MIS, CO, BO
-# quantity: The stock quantity
-# instrument_token: The instrument token of the stock to trade.
-# transaction_type: Expected values are B, S
-client.margin_required(exchange_segment = "", price = "", order_type= "", product = "",   quantity = "", instrument_token = "",  transaction_type = "")
-
-# Get Scrip Master CSV file
-# The function retrieves the list of scrips available in the given exchange segment
-client.scrip_master()
-
-# Get Scrip Master CSV file for specific Exchange Segment. 
-# exchange_segment: Section of a stock exchange. Its a mandatory param. Expected values are nse_cm, bse_cm, nse_fo, bse_fo, cde_fo, mcx_fo
-client.scrip_master(exchange_segment = "")
-
-# Search for the Scrip details from Scrip master file
-# exchange_segment: Section of a stock exchange. Its a mandatory param. Expected values are nse_cm, bse_cm, nse_fo, bse_fo, cde_fo, mcx_fo
-client.search_scrip(exchange_segment="", symbol="", expiry="", option_type="",
-                    strike_price="")
-
-# Get quote details
-instrument_tokens = [
-    {"instrument_token": "", "exchange_segment": ""},
-    {"instrument_token": "", "exchange_segment": ""},
-    {"instrument_token": "", "exchange_segment": ""}
-]
-# quote_type: Expected values are `all`, `depth`, `ohlc`, `ltp`, `oi`, `52w`, `circuit_limits`, `scrip_details`
-    # By default, `quote_type` is set as `all`, which means you will get the complete data.
-    # Quotes API can be accessed by access token without completing login.
-# instrument_tokens: This is a list of dictionaries.
-    # instrument_token: The instrument token of the stock
-    # exchange_segment: Expected values are nse_cm, bse_cm, nse_fo, bse_fo, cde_fo, mcx_fo
-client.quotes(instrument_tokens = instrument_tokens, quote_type = "")
-
-def on_message(message):
-    print(message)
-    
-def on_error(error_message):
-    print(error_message)
-
-def on_close(message):
-    print(message)
-    
-def on_open(message):
-    print(message)
-
-# Setup Callbacks for websocket events (Optional)
-client.on_message = on_message  # called when message is received from websocket
-client.on_error = on_error  # called when any error or exception occurs in code or websocket
-client.on_close = on_close  # called when websocket connection is closed
-client.on_open = on_open  # called when websocket successfully connects
-
-# Subscribe method will get you the live feed details of the given tokens.
-# By Default isIndex is set as False and you want to get the live feed to index scrips set the isIndex flag as True 
-# By Default isDepth is set as False and you want to get the depth information set the isDepth flag as True
-# instrument_tokens: This is a list of dictionaries.
-    # instrument_token: The instrument token of the stock which you will get from master scrip file
-    # exchange_segment: Expected values are nse_cm, bse_cm, nse_fo, bse_fo, cde_fo, mcx_fo
-# isIndex: If you want to subscribe to index data, set isIndex to True
-# isDepth: If you want to subscribe to depth data, set isDepth to True
-client.subscribe(instrument_tokens = instrument_tokens, isIndex=False, isDepth=False)
-
-# Un_Subscribes the given tokens. First the tokens will be checked weather that is subscribed. If not Subscribed we will send you the error message else we will unsubscribe the give tokens
-# instrument_tokens: This is a list of dictionaries.
-    # instrument_token: The instrument token of the stock
-    # exchange_segment: Expected values are nse_cm, bse_cm, nse_fo, bse_fo, cde_fo, mcx_fo
-# isIndex: If you want to unsubscribe to index data, set isIndex to True
-# isDepth: If you want to unsubscribe to depth data, set isDepth to True
-client.un_subscribe(instrument_tokens=instrument_tokens, isIndex=False, isDepth=False)
-
-#Order Feed 
-# This function subscribes to order feed
-client.subscribe_to_orderfeed()
-
-#Terminate user's Session
-client.logout()
+```powershell
+py -3.12 -m venv .venv
+.venv/Scripts/python.exe -m pip install --upgrade pip
+.venv/Scripts/python.exe -m pip install -r requirements.txt
 ```
 
+### 3. Install frontend dependencies
 
-## Documentation for API Endpoints
+```powershell
+Set-Location frontend
+npm ci
+Set-Location ..
+```
 
-| Class                  | Method                                                                                     | Description              |
-|------------------------|--------------------------------------------------------------------------------------------|--------------------------|
-| *Session Initiation*   | [**neo_api_client.SessionINIT**](docs/Session_init.md#session_init)                        | Initialise Session       |
-| *TOTP LoginAPI*        | [**neo_api_client.Totp_login**](docs/Totp_login.md#totp_login)                             | TOTP Login               |
-| *TOTP LoginAPI*        | [**neo_api_client.Totp_validation**](docs/Totp_validate.md#totp_validate)                  | TOTP Validation          |
-| *Place Order*          | [**neo_api_client.placeorder**](docs/Place_Order.md#place_order)                           | Place Order              |
-| *Modify Order*         | [**neo_api_client.modifyorder**](docs/Modify_Order.md#modify_order)                        | Modify Order             |
-| *Cancel Order*         | [**neo_api_client.cancelorder**](docs/Cancel_Order.md#cancel_order)                        | Cancel Order             |
-| *Cancel Order*         | [**neo_api_client.cancelcoverorder**](docs/Cancel_Cover_Order.md#cancel_cover_order)       | Cancel Cover Order       |
-| *Cancel Order*         | [**neo_api_client.cancelbracketorder**](docs/Cancel_Bracket_Order.md#cancel_bracket_order) | Cancel Bracket Order     |
-| *Order Report*         | [**neo_api_client.orderreport**](docs/Order_report.md#order_report)                        | Order Report             |
-| *Order History*        | [**neo_api_client.orderhistory**](docs/Order_history.md#order_history)                     | Order Report             |
-| *Trade Report*         | [**neo_api_client.tradereport**](docs/Trade_report.md#trade_report)                        | Trade Report             |
-| *Positions*            | [**neo_api_client.positions**](docs/Positions.md#positions)                                | Positions                |
-| *Holdings*             | [**neo_api_client.holdings**](docs/Holdings.md#holdings)                                   | Holdings                 |
-| *Limits*               | [**neo_api_client.limits**](docs/Limits.md#limits)                                         | Limits                   |
-| *Margin Required*      | [**neo_api_client.margin_required**](docs/Margin_Required.md#margin_required)              | Margin Required          |
-| *Scrip Master*         | [**neo_api_client.scrip_master**](docs/Scrip_Master.md#scrip_master)                       | Scrip Master             |
-| *Search Scrip*         | [**neo_api_client.scrip_search**](docs/Scrip_Search.md#scrip_search)                       | Scrip Search             |
-| *Quotes*               | [**neo_api_client.quotes**](docs/Quotes.md#quotes)                                         | Quotes                   |
-| *Subscribe*            | [**neo_api_client.subscribe**](docs/webSocket.md#websocket)                                | Subscribe                |
-| *Subscribe Order Feed* | [**neo_api_client.subscribeorderfeed**](docs/webSocket_orderfeed.md#websocket_orderfeed)   | Subscribe                |
+### 4. Start the app
 
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File ./run_servers.ps1 -Action start
+```
+
+Open [http://localhost:5173](http://localhost:5173). The backend is at [http://localhost:8001](http://localhost:8001), its health check is [http://localhost:8001/health](http://localhost:8001/health), and interactive API docs are at [http://localhost:8001/docs](http://localhost:8001/docs).
+
+The start script runs both servers in the background and writes logs to the repository root. Use [SERVER_COMMANDS.md](SERVER_COMMANDS.md) for start, stop, restart, and status commands.
+
+## Updating after a Git pull
+
+From the repository root:
+
+```powershell
+git pull
+.venv/Scripts/python.exe -m pip install -r requirements.txt
+Set-Location frontend
+npm ci
+Set-Location ..
+powershell.exe -ExecutionPolicy Bypass -File ./run_servers.ps1 -Action restart
+```
+
+The root `.env` is ignored by Git and stays on your machine. The guarded copy command above leaves an existing `.env` untouched. Repeating the dependency installation commands after a pull keeps the local Python and Node packages aligned with the repository.
+
+## Manual development startup
+
+For visible foreground servers, open two PowerShell windows at the repository root.
+
+Backend:
+
+```powershell
+.venv/Scripts/python.exe -m uvicorn backend.main:app --host 127.0.0.1 --port 8001 --reload
+```
+
+Frontend:
+
+```powershell
+Set-Location frontend
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+## What runs in this repository
+
+- `frontend/`: React, TypeScript, and Vite dashboard
+- `backend/`: FastAPI routes and the Kotak client/session wrapper
+- `neo_api_client/`: local Kotak Neo Python SDK
+- `screener/`: swing-trade scanner
+- `backend/data/nifty50_constituents.csv`: fallback list of Nifty 50 constituents
+- `docs/`: Kotak SDK endpoint references
+- `run_servers.ps1`: Windows background server helper
+
+The backend keeps the Kotak login session in memory. Log in again after restarting the backend or after Kotak expires the session. Live prices and option data depend on the broker session, broker market data, and available instrument tokens.
+
+AMO orders are currently rejected by the backend with a service-unavailable response. Submit AMO orders through Kotak Neo directly until this route is re-enabled.
+
+## Troubleshooting
+
+| Symptom | Check |
+| --- | --- |
+| Login says consumer key is missing | Confirm you edited the root `.env`, then restart the backend |
+| Kotak rejects login or order requests | Check the consumer key, current TOTP, UCC/mobile number, and the backend host's whitelisted public IP |
+| Page says session expired after restart | This is expected; the backend session is in memory. Log in again |
+| Start script says Python environment not found | Create `.venv` and install `requirements.txt` as shown above |
+| `npm ci` or start script cannot find npm | Install Node.js 18 or 20+ and reopen PowerShell |
+| Port 5173 or 8001 is already in use | Stop the other process or use [SERVER_COMMANDS.md](SERVER_COMMANDS.md) to stop this app |
+| Symbols appear without live prices | Confirm login and check the backend log for Kotak instrument-master or token errors; the constituent list alone does not provide live prices |
+
+## Further documentation
+
+- [Windows server commands](SERVER_COMMANDS.md)
+- [Architecture and API notes](IMPLEMENTATION_GUIDE.md)
+- [Kotak API endpoint references](docs/)
+## One-click desktop controls
+
+The desktop shortcuts Kotak Neo Terminal - Start and Kotak Neo Terminal - Stop start or stop both servers. The server processes run in the background; the launcher window shows the result and waits for a key before closing. Start leaves both occupied app ports untouched, so clicking it again will not restart the session. Use the Restart command in SERVER_COMMANDS.md when you intend to restart the app.
+
+You can also double-click Start Trading Terminal.cmd or Stop Trading Terminal.cmd in the repository folder. After pulling the repository onto another Windows computer, create its desktop shortcuts once by running this from the repository root:
+
+    powershell.exe -ExecutionPolicy Bypass -File ./create_desktop_shortcuts.ps1
+
+If you move the repository folder, rerun that command to update the shortcut paths.

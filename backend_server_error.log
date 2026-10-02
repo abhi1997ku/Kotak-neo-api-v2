@@ -1,6 +1,4 @@
-INFO:     Will watch for changes in these directories: ['D:\\Kotak-neo-api-v2']
-INFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)
-INFO:     Started reloader process [21564] using StatReload
-INFO:     Started server process [15408]
+INFO:     Started server process [22852]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)

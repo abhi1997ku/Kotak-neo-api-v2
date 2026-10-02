@@ -14,8 +14,8 @@ export function LoginForm() {
       return;
     }
 
-    if (mpin.length < 4) {
-      alert("MPIN must be entered");
+    if (mpin.length !== 6) {
+      alert("MPIN must be exactly 6 digits");
       return;
     }
 
@@ -69,7 +69,7 @@ export function LoginForm() {
 
           <button
             type="submit"
-            disabled={isLoading || totp.length !== 6 || mpin.length < 4}
+            disabled={isLoading || totp.length !== 6 || mpin.length !== 6}
             className="w-full rounded-lg bg-blue-600 px-4 py-2 font-medium text-white disabled:opacity-50 hover:bg-blue-700"
           >
             {isLoading ? "Logging in..." : "Login"}

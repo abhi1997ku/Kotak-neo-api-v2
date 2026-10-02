@@ -31,8 +31,22 @@ class ScripSearch(object):
 
             data = scrip_report.json()["data"]
             if exchange_segment is not None:
-                exchange_segment_csv = [file for file in data["filesPaths"] if exchange_segment.lower() in file.lower()]
-                response = requests.get(exchange_segment_csv[0])
+                segment = exchange_segment.lower()
+                aliases = {
+                    "nse_fo": ("nse_fo", "nsefo", "nfo"),
+                    "bse_fo": ("bse_fo", "bsefo", "bfo"),
+                    "cde_fo": ("cde_fo", "cdefo", "cds"),
+                    "bcs-fo": ("bcs-fo", "bcsfo", "bcd"),
+                    "mcx_fo": ("mcx_fo", "mcxfo", "mcx"),
+                }.get(segment, (segment,))
+                exchange_segment_csv = [
+                    file for file in data["filesPaths"]
+                    if any(alias in str(file).lower() for alias in aliases)
+                ]
+                if not exchange_segment_csv:
+                    raise ValueError(f"No instrument-master file found for exchange segment '{exchange_segment}'")
+                response = requests.get(exchange_segment_csv[0], timeout=15)
+                response.raise_for_status()
                 csv_text = response.text
                 df = pd.read_csv(io.StringIO(csv_text))
                 df = df.rename(columns=lambda x: x.strip())
@@ -136,5 +150,5 @@ class ScripSearch(object):
                     return {"message": "No data found with the given search information."
                                        "Please try with other combinations."}
 
-        except ApiException as ex:
-            return {"error": ex}
+        except (ApiException, requests.RequestException, ValueError, KeyError) as ex:
+            return {"error": [{"message": str(ex)}]}

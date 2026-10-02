@@ -1,9 +1,15 @@
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 from backend.kotak_client import KotakClientError
 from backend.session_manager import get_session_manager
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+class LoginRequest(BaseModel):
+    totp: str
+    mpin: str
 
 
 def auth_error_status(message: str) -> int:
@@ -25,13 +31,19 @@ def normalize_auth_error(message: str) -> str:
 
 
 @router.post("/login")
-def login(totp: str | None = None, mpin: str | None = None) -> dict:
+def login(payload: LoginRequest) -> dict:
     """Two-step authentication: TOTP + MPIN from the user session."""
     try:
+        totp = payload.totp.strip()
+        mpin = payload.mpin.strip()
         if not totp:
             raise HTTPException(status_code=400, detail="TOTP code is required")
         if not mpin:
             raise HTTPException(status_code=400, detail="MPIN is required")
+        if not totp.isdigit() or len(totp) != 6:
+            raise HTTPException(status_code=400, detail="TOTP must be exactly 6 digits")
+        if not mpin.isdigit() or len(mpin) != 6:
+            raise HTTPException(status_code=400, detail="MPIN must be exactly 6 digits")
 
         session_mgr = get_session_manager()
         return session_mgr.login(totp=totp, mpin=mpin)
@@ -39,6 +51,8 @@ def login(totp: str | None = None, mpin: str | None = None) -> dict:
     except KotakClientError as e:
         message = normalize_auth_error(str(e))
         raise HTTPException(status_code=auth_error_status(str(e)), detail=message)
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
