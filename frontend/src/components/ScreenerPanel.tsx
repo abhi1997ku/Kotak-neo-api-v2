@@ -21,20 +21,20 @@ export function ScreenerPanel() {
 
   return (
     <section className="rounded-xl border border-slate-800 bg-slate-900 p-4">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-4 flex flex-col gap-3">
         <div>
           <h2 className="text-sm uppercase tracking-wide text-slate-400">Swing trade scanner</h2>
           <p className="mt-1 text-xs text-slate-500">Ranked setups only. No orders are placed automatically.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <select value={mode} onChange={(event) => setMode(event.target.value as "synthetic" | "real")} className="rounded border border-slate-700 bg-slate-800 px-2 py-2 text-xs text-slate-200">
+        <div className="grid w-full min-w-0 grid-cols-2 gap-2">
+          <select value={mode} onChange={(event) => setMode(event.target.value as "synthetic" | "real")} className="col-span-2 w-full min-w-0 rounded border border-slate-700 bg-slate-800 px-2 py-2 text-xs text-slate-200">
             <option value="synthetic">Synthetic test</option>
             <option value="real">Real market data</option>
           </select>
-          <label className="text-xs text-slate-400">Min R:R
-            <input type="number" min="0.5" step="0.5" value={minRr} onChange={(event) => setMinRr(Math.max(0.5, Number(event.target.value)))} className="ml-2 w-14 rounded border border-slate-700 bg-slate-800 px-2 py-2 text-slate-100" />
+          <label className="flex min-w-0 flex-col gap-1 text-xs text-slate-400"><span>Min R:R</span>
+            <input type="number" min="0.5" step="0.5" value={minRr} onChange={(event) => setMinRr(Math.max(0.5, Number(event.target.value)))} className="w-full min-w-0 rounded border border-slate-700 bg-slate-800 px-2 py-2 text-slate-100" />
           </label>
-          <button onClick={runScan} disabled={isFetching} className="flex items-center gap-1 rounded bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-500 disabled:opacity-60">
+          <button onClick={runScan} disabled={isFetching} className="flex w-full min-w-0 items-center justify-center gap-1 self-end rounded bg-blue-600 px-2 py-2 text-xs font-semibold text-white hover:bg-blue-500 disabled:opacity-60">
             {isFetching ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
             Scan
           </button>

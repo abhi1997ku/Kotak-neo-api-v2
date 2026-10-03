@@ -8,10 +8,20 @@ const API_BASE_URL = "http://localhost:8001/api";
 export interface Position {
   symbol: string;
   qty: number;
+  order_quantity?: number;
   avg_price: number;
   current_price: number;
   pnl: number;
   pnl_pct: number;
+  exchange_segment?: string;
+  instrument_token?: string;
+  product?: string;
+}
+
+export interface PositionToken {
+  symbol: string;
+  exchange_segment: string;
+  instrument_token: string;
 }
 
 export interface Holding {
@@ -20,6 +30,10 @@ export interface Holding {
   avg_price: number;
   current_price: number;
   value: number;
+  trading_symbol?: string;
+  instrument_token?: string;
+  exchange_segment?: string;
+  product?: string;
 }
 
 export interface Order {
@@ -27,6 +41,8 @@ export interface Order {
   symbol: string;
   side: "BUY" | "SELL";
   qty: number;
+  filled_qty?: number | null;
+  unfilled_qty?: number | null;
   price: number;
   order_type: string;
   validity: string;
@@ -213,8 +229,8 @@ class KotakNeoAPI {
   }
 
   // Market endpoints
-  async getQuotes(symbols: string[]): Promise<{ quotes: QuoteData[] }> {
-    return this.request(`/market/quotes?symbols=${symbols.join(",")}`, {
+  async getQuotes(symbols: string[], exchangeSegment = "nse_cm"): Promise<{ quotes: QuoteData[] }> {
+    return this.request(`/market/quotes?symbols=${symbols.join(",")}&exchange_segment=${encodeURIComponent(exchangeSegment)}`, {
       method: "GET",
     });
   }
@@ -234,6 +250,16 @@ class KotakNeoAPI {
       .map(({ exchange_segment, instrument_token }) => `${exchange_segment}|${instrument_token}`)
       .join(",");
     return new WebSocket(`${websocketBase}/market/option-chain/stream?tokens=${encodeURIComponent(encodedTokens)}`);
+  }
+
+  createPositionStream(tokens: PositionToken[]): WebSocket {
+    const websocketBase = API_BASE_URL.replace(/^http/, "ws");
+    return new WebSocket(`${websocketBase}/positions/stream?tokens=${encodeURIComponent(JSON.stringify(tokens))}`);
+  }
+
+  createPaperFutureStream(): WebSocket {
+    const websocketBase = API_BASE_URL.replace(/^http/, "ws");
+    return new WebSocket(`${websocketBase}/paper-trading/future-stream`);
   }
 
   async searchSymbol(query: string): Promise<{ results: any[]; message?: string }> {

@@ -63,6 +63,22 @@ The API prefix is `/api`. FastAPI's interactive route documentation is available
 | Screener | `GET /api/screener/scan`, `GET /api/screener/latest` |
 | Health | `GET /health` |
 
+## Dashboard and order workflow
+
+- The left sidebar contains margin data, instrument search, a dashboard refresh action, logout, and an expandable Holdings panel. Holdings are fetched from `GET /api/positions/holdings` and refresh every 10 seconds while the panel is open.
+- Each holding has a **Sell holding** action. It opens the shared order ticket with Sell selected, the holding quantity prefilled, and that quantity enforced as the maximum. The holding sell ticket defaults to CNC and keeps the product fixed. A partial quantity can be entered.
+- Kotak holding records may not include optional trading-symbol or exchange metadata in the app response. In that case, the ticket uses the holding symbol with the `-EQ` suffix and the NSE cash segment (`nse_cm`). It uses the holding's current price as the displayed LTP fallback.
+- The shared order ticket is also used by watchlist/search and option-chain Buy/Sell actions, and by position exits. Position exits use the position's product and cap the quantity to the open position amount.
+- On successful submission, the ticket closes and the app refreshes its order book, positions, holdings, and trade book data. Orders in the order book are displayed newest first using Kotak's order timestamp.
+- Market and limit orders are available in the ticket. AMO placement through this terminal is currently unavailable; see [README.md](README.md#what-runs-in-this-repository).
+
+See `Dashboard.tsx`, `HoldingsPanel.tsx`, `OrderTicketModal.tsx`, and `OrdersPanel.tsx` under `frontend/src/components/` for these UI flows.
+
+## Margin data
+
+The margin panel refreshes every five seconds through GET /api/positions/margin. The backend requests Kotak RMS limits with segment, exchange, and product set to ALL. Available Margin displays Kotak's Net value. Gross Margin Available uses a gross value if returned, then CollateralValue, then Net plus MarginUsed. Utilised displays MarginUsed, and P&L sums Kotak's realized and unrealized MTM values. Invalid or unavailable broker data is reported to the panel instead of being replaced with fabricated zero balances.
+
+The sample field names and response shape are documented in the local Kotak reference at docs/Limits.md.
 ## Session and market data behavior
 
 - The authenticated Kotak client and session tokens live in backend process memory. Restarting the backend clears the session; sign in again from the UI.

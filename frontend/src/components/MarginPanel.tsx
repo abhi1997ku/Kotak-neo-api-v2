@@ -37,21 +37,21 @@ export function MarginPanel() {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-      <div className="rounded-lg border border-slate-700 bg-slate-800 p-3">
-        <p className="text-xs text-slate-400">Available</p>
+    <div className="grid min-w-0 grid-cols-2 gap-2">
+      <div className="min-w-0 rounded-lg border border-slate-700 bg-slate-800 p-2">
+        <p className="min-h-8 break-words text-xs leading-tight text-slate-400">Available Margin</p>
         <p className="mt-1 text-sm font-semibold text-emerald-400">₹{margin.available?.toFixed(2) || "0.00"}</p>
       </div>
-      <div className="rounded-lg border border-slate-700 bg-slate-800 p-3">
-        <p className="text-xs text-slate-400">Utilised</p>
+      <div className="min-w-0 rounded-lg border border-slate-700 bg-slate-800 p-2">
+        <p className="min-h-8 break-words text-xs leading-tight text-slate-400">Utilised</p>
         <p className="mt-1 text-sm font-semibold text-red-400">₹{margin.utilised?.toFixed(2) || "0.00"}</p>
       </div>
-      <div className="rounded-lg border border-slate-700 bg-slate-800 p-3">
-        <p className="text-xs text-slate-400">Gross Margin</p>
+      <div className="min-w-0 rounded-lg border border-slate-700 bg-slate-800 p-2">
+        <p className="min-h-8 break-words text-xs leading-tight text-slate-400">Gross Margin Available</p>
         <p className="mt-1 text-sm font-semibold text-slate-200">₹{margin.gross?.toFixed(2) || "0.00"}</p>
       </div>
-      <div className="rounded-lg border border-slate-700 bg-slate-800 p-3">
-        <p className="text-xs text-slate-400">P&L</p>
+      <div className="min-w-0 rounded-lg border border-slate-700 bg-slate-800 p-2">
+        <p className="min-h-8 break-words text-xs leading-tight text-slate-400">P&L</p>
         <p className={`mt-1 text-sm font-semibold ${(margin.pnl || 0) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
           ₹{margin.pnl?.toFixed(2) || "0.00"}
         </p>

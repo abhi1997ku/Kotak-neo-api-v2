@@ -1,4 +1,684 @@
-INFO:     Started server process [22852]
+INFO:     Started server process [21328]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)
+INFO:     ('127.0.0.1', 62057) - "WebSocket /api/watchlist/stream" [accepted]
+INFO:     connection open
+INFO:     connection closed
+2026-10-03 12:37:05,575 - neo_api_client.api.totp_api - INFO - Kotak session fields: data_keys=['asbaStatus', 'baseUrl', 'clientGroup', 'clientType', 'dataCenter', 'dataCenterMap', 'derivativesRiskDisclosure', 'dormancyStatus', 'feedUrl', 'greetingName', 'hsServerId', 'incRange', 'incUpdFlag', 'isNRI', 'isTrialAccount', 'isUserPwdExpired', 'kId', 'kType', 'kraStatus', 'mfAccess', 'rcFlag', 'rid', 'rtUrl', 'sid', 'status', 'token', 'ucc'] hs_server_id='' server_id=None feed_url='wss://sfeed.kotaksecurities.com/apifeed' rt_url='wss://e41.kotaksecurities.com/realtime' base_url='https://e41.kotaksecurities.com'
+INFO:     ('127.0.0.1', 52180) - "WebSocket /api/paper-trading/future-stream" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     ('127.0.0.1', 51238) - "WebSocket /api/paper-trading/future-stream" [accepted]
+INFO:     connection open
+INFO:     ('127.0.0.1', 53698) - "WebSocket /api/watchlist/stream" [accepted]
+INFO:     connection open
+2026-10-03 12:37:05,800 - backend.kotak_client - WARNING - Kotak order book response summary: stat='Ok' stCode='200' envelope_keys=('data', 'stCode', 'stat') rows=6 row_keys=('GuiOrdId', 'actId', 'algCat', 'algId', 'algSeqNo', 'appInstlId', 'avgPrc', 'boeSec', 'brdLtQty', 'brkClnt', 'classification', 'cnlQty', 'coPct', 'defMktProV', 'dscQty', 'dscQtyPct', 'exCfmTm', 'exOrdId', 'exSeg', 'exUsrInfo', 'expDt', 'expDtSsb', 'fldQty', 'genDen', 'genNum', 'hsUpTm', 'it', 'locId', 'lotSz', 'mfdBy', 'minQty', 'mktPro', 'mktProFlg', 'mktProPct', 'multiplier', 'nOrdNo', 'noMktProFlg', 'odCrt', 'optTp', 'ordAutSt', 'ordDtTm', 'ordEntTm', 'ordGenTp', 'ordModNo', 'ordSrc', 'ordSt', 'ordValDt', 'prc', 'prcDen', 'prcNum', 'prcTp', 'precision', 'prod', 'qty', 'refLmtPrc', 'rejRsn', 'reqId', 'rmk', 'rptTp', 'series', 'sipInd', 'stat', 'stkPrc', 'strategyCode', 'sym', 'symOrdId', 'tckSz', 'tok', 'trdSym', 'trgPrc', 'trnsTp', 'uSec', 'unFldSz', 'updRecvTm', 'usrId', 'vendorCode', 'vldt')
+INFO:     ('127.0.0.1', 52360) - "WebSocket /api/positions/stream?tokens=%5B%7B%22symbol%22%3A%22ADANIENT-EQ%22%2C%22exchange_segment%22%3A%22nse_cm%22%2C%22instrument_token%22%3A%2225%22%7D%2C%7B%22symbol%22%3A%22NIFTY26O0622400CE%22%2C%22exchange_segment%22%3A%22nse_fo%22%2C%22instrument_token%22%3A%2240687%22%7D%5D" [accepted]
+INFO:     connection open
+2026-10-03 12:37:06,000 - neo_api_client.websocket.feed.client - INFO - sfeed_connected {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:37:06,001 - neo_api_client.websocket.feed.client - INFO - sfeed_authenticated {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:37:10,657 - backend.watchlist_catalog - WARNING - Could not refresh Nifty 50 constituents; using bundled snapshot: HTTPSConnectionPool(host='www.niftyindices.com', port=443): Read timed out. (read timeout=5)
+2026-10-03 12:37:10,829 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'scrips_lite', 'tokens': 2}
+2026-10-03 12:37:10,865 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:10,865 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,340 - neo_api_client.websocket.feed.client - INFO - sfeed_connected {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:37:17,340 - neo_api_client.websocket.feed.client - INFO - sfeed_authenticated {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:37:17,341 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'scrips_lite', 'tokens': 50}
+2026-10-03 12:37:17,417 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,418 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,418 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,418 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,418 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,419 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,419 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,419 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,419 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,419 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,420 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,420 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,420 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,420 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,420 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,420 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,421 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,421 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,421 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,421 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,421 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,422 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,422 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,422 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,422 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,422 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,422 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,422 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,422 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,423 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,423 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,423 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,423 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,423 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,423 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,423 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,424 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,424 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,424 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,424 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,424 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,424 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,424 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,425 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,425 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,425 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,425 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,425 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,425 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,425 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,426 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'index', 'tokens': 3}
+2026-10-03 12:37:17,462 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,463 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,463 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,464 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed_exchange
+2026-10-03 12:37:17,501 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,501 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,501 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,501 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,501 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,502 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,502 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,502 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,502 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:17,502 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\websockets\legacy\protocol.py", line 963, in transfer_data
+    message = await self.read_message()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\websockets\legacy\protocol.py", line 1033, in read_message
+    frame = await self.read_data_frame(max_size=self.max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\websockets\legacy\protocol.py", line 1108, in read_data_frame
+    frame = await self.read_frame(max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\websockets\legacy\protocol.py", line 1165, in read_frame
+    frame = await Frame.read(
+            ^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\websockets\legacy\framing.py", line 68, in read
+    data = await reader(2)
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\abhi1\AppData\Local\Programs\Python\Python314\Lib\asyncio\streams.py", line 767, in readexactly
+    raise exceptions.IncompleteReadError(incomplete, n)
+asyncio.exceptions.IncompleteReadError: 0 bytes read on a total of 2 expected bytes
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\uvicorn\protocols\websockets\websockets_impl.py", line 332, in asgi_send
+    await self.send(data)  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\websockets\legacy\protocol.py", line 635, in send
+    await self.ensure_open()
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\websockets\legacy\protocol.py", line 939, in ensure_open
+    raise self.connection_closed_exc()
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\websockets.py", line 85, in send
+    await self._send(message)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\_exception_handler.py", line 48, in sender
+    await send(message)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\uvicorn\protocols\websockets\websockets_impl.py", line 345, in asgi_send
+    raise ClientDisconnected from exc
+uvicorn.protocols.utils.ClientDisconnected
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\uvicorn\protocols\websockets\websockets_impl.py", line 244, in run_asgi
+    result = await self.app(self.scope, self.asgi_receive, self.asgi_send)  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 70, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\fastapi\applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\middleware\errors.py", line 152, in __call__
+    await self.app(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\middleware\cors.py", line 77, in __call__
+    await self.app(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\routing.py", line 715, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\routing.py", line 735, in app
+    await route.handle(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\routing.py", line 362, in handle
+    await self.app(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\routing.py", line 95, in app
+    await wrap_app_handling_exceptions(app, session)(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\routing.py", line 93, in app
+    await func(session)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\fastapi\routing.py", line 383, in app
+    await dependant.call(**solved_result.values)
+  File "D:\Kotak-neo-api-v2\backend\routes\paper_trading.py", line 27, in future_stream
+    await websocket.send_json({"type": "status", "state": "error", "message": detail})
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\websockets.py", line 175, in send_json
+    await self.send({"type": "websocket.send", "text": text})
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\websockets.py", line 88, in send
+    raise WebSocketDisconnect(code=1006)
+starlette.websockets.WebSocketDisconnect
+INFO:     connection closed
+INFO:     connection closed
+INFO:     ('127.0.0.1', 56271) - "WebSocket /api/positions/stream?tokens=%5B%7B%22symbol%22%3A%22NIFTY26O0622400CE%22%2C%22exchange_segment%22%3A%22nse_fo%22%2C%22instrument_token%22%3A%2240687%22%7D%2C%7B%22symbol%22%3A%22ADANIENT-EQ%22%2C%22exchange_segment%22%3A%22nse_cm%22%2C%22instrument_token%22%3A%2225%22%7D%5D" [accepted]
+INFO:     connection open
+2026-10-03 12:37:28,765 - neo_api_client.websocket.feed.client - INFO - sfeed_connected {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:37:28,766 - neo_api_client.websocket.feed.client - INFO - sfeed_authenticated {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:37:29,117 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'scrips_lite', 'tokens': 2}
+2026-10-03 12:37:29,155 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:29,155 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+INFO:     connection closed
+INFO:     ('127.0.0.1', 52948) - "WebSocket /api/positions/stream?tokens=%5B%7B%22symbol%22%3A%22ADANIENT-EQ%22%2C%22exchange_segment%22%3A%22nse_cm%22%2C%22instrument_token%22%3A%2225%22%7D%2C%7B%22symbol%22%3A%22NIFTY26O0622400CE%22%2C%22exchange_segment%22%3A%22nse_fo%22%2C%22instrument_token%22%3A%2240687%22%7D%5D" [accepted]
+INFO:     connection open
+2026-10-03 12:37:34,055 - neo_api_client.websocket.feed.client - INFO - sfeed_connected {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:37:34,056 - neo_api_client.websocket.feed.client - INFO - sfeed_authenticated {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:37:34,400 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'scrips_lite', 'tokens': 2}
+2026-10-03 12:37:34,437 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:34,438 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+INFO:     connection closed
+INFO:     ('127.0.0.1', 62840) - "WebSocket /api/positions/stream?tokens=%5B%7B%22symbol%22%3A%22NIFTY26O0622400CE%22%2C%22exchange_segment%22%3A%22nse_fo%22%2C%22instrument_token%22%3A%2240687%22%7D%2C%7B%22symbol%22%3A%22ADANIENT-EQ%22%2C%22exchange_segment%22%3A%22nse_cm%22%2C%22instrument_token%22%3A%2225%22%7D%5D" [accepted]
+INFO:     connection open
+2026-10-03 12:37:39,269 - neo_api_client.websocket.feed.client - INFO - sfeed_connected {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:37:39,270 - neo_api_client.websocket.feed.client - INFO - sfeed_authenticated {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:37:39,630 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'scrips_lite', 'tokens': 2}
+2026-10-03 12:37:39,666 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:39,666 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+INFO:     connection closed
+INFO:     ('127.0.0.1', 53872) - "WebSocket /api/positions/stream?tokens=%5B%7B%22symbol%22%3A%22ADANIENT-EQ%22%2C%22exchange_segment%22%3A%22nse_cm%22%2C%22instrument_token%22%3A%2225%22%7D%2C%7B%22symbol%22%3A%22NIFTY26O0622400CE%22%2C%22exchange_segment%22%3A%22nse_fo%22%2C%22instrument_token%22%3A%2240687%22%7D%5D" [accepted]
+INFO:     connection open
+2026-10-03 12:37:44,420 - neo_api_client.websocket.feed.client - INFO - sfeed_connected {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:37:44,421 - neo_api_client.websocket.feed.client - INFO - sfeed_authenticated {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:37:44,776 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'scrips_lite', 'tokens': 2}
+2026-10-03 12:37:44,814 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:44,815 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+INFO:     connection closed
+INFO:     ('127.0.0.1', 50818) - "WebSocket /api/positions/stream?tokens=%5B%7B%22symbol%22%3A%22NIFTY26O0622400CE%22%2C%22exchange_segment%22%3A%22nse_fo%22%2C%22instrument_token%22%3A%2240687%22%7D%2C%7B%22symbol%22%3A%22ADANIENT-EQ%22%2C%22exchange_segment%22%3A%22nse_cm%22%2C%22instrument_token%22%3A%2225%22%7D%5D" [accepted]
+INFO:     connection open
+2026-10-03 12:37:49,607 - neo_api_client.websocket.feed.client - INFO - sfeed_connected {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:37:49,607 - neo_api_client.websocket.feed.client - INFO - sfeed_authenticated {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:37:49,986 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'scrips_lite', 'tokens': 2}
+2026-10-03 12:37:50,024 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:37:50,024 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+INFO:     connection closed
+INFO:     connection closed
+INFO:     ('127.0.0.1', 56402) - "WebSocket /api/paper-trading/future-stream" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     ('127.0.0.1', 56059) - "WebSocket /api/paper-trading/future-stream" [accepted]
+INFO:     connection open
+INFO:     ('127.0.0.1', 63044) - "WebSocket /api/watchlist/stream" [accepted]
+INFO:     connection open
+2026-10-03 12:39:45,753 - backend.kotak_client - WARNING - Kotak order book response summary: stat='Ok' stCode='200' envelope_keys=('data', 'stCode', 'stat') rows=6 row_keys=('GuiOrdId', 'actId', 'algCat', 'algId', 'algSeqNo', 'appInstlId', 'avgPrc', 'boeSec', 'brdLtQty', 'brkClnt', 'classification', 'cnlQty', 'coPct', 'defMktProV', 'dscQty', 'dscQtyPct', 'exCfmTm', 'exOrdId', 'exSeg', 'exUsrInfo', 'expDt', 'expDtSsb', 'fldQty', 'genDen', 'genNum', 'hsUpTm', 'it', 'locId', 'lotSz', 'mfdBy', 'minQty', 'mktPro', 'mktProFlg', 'mktProPct', 'multiplier', 'nOrdNo', 'noMktProFlg', 'odCrt', 'optTp', 'ordAutSt', 'ordDtTm', 'ordEntTm', 'ordGenTp', 'ordModNo', 'ordSrc', 'ordSt', 'ordValDt', 'prc', 'prcDen', 'prcNum', 'prcTp', 'precision', 'prod', 'qty', 'refLmtPrc', 'rejLongDesc', 'rejRsn', 'rejShortDesc', 'reqId', 'rmk', 'rptTp', 'series', 'sipInd', 'stat', 'stkPrc', 'strategyCode', 'sym', 'symOrdId', 'tckSz', 'tok', 'trdSym', 'trgPrc', 'trnsTp', 'uSec', 'unFldSz', 'updRecvTm', 'usrId', 'vendorCode', 'vldt')
+INFO:     ('127.0.0.1', 58271) - "WebSocket /api/positions/stream?tokens=%5B%7B%22symbol%22%3A%22ADANIENT-EQ%22%2C%22exchange_segment%22%3A%22nse_cm%22%2C%22instrument_token%22%3A%2225%22%7D%2C%7B%22symbol%22%3A%22NIFTY26O0622400CE%22%2C%22exchange_segment%22%3A%22nse_fo%22%2C%22instrument_token%22%3A%2240687%22%7D%5D" [accepted]
+INFO:     connection open
+2026-10-03 12:39:46,454 - neo_api_client.websocket.feed.client - INFO - sfeed_connected {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:39:46,670 - neo_api_client.websocket.feed.client - INFO - sfeed_authenticated {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:39:46,690 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'scrips_lite', 'tokens': 50}
+2026-10-03 12:39:46,766 - neo_api_client.websocket.feed.client - INFO - sfeed_connected {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:39:46,808 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:46,828 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:46,850 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:46,856 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:46,863 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:46,870 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:46,884 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:46,898 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:46,913 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:46,954 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:46,967 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:46,982 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:46,995 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,017 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,025 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,041 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,051 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,065 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,092 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,099 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,127 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,134 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,149 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,155 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,162 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,169 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,184 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,218 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,224 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,252 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,281 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,287 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,301 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,322 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,342 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,356 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,363 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,370 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,384 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,391 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,398 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,413 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,426 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,433 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,453 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,467 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,483 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,495 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,516 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,530 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,551 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'index', 'tokens': 3}
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\websockets\legacy\protocol.py", line 963, in transfer_data
+    message = await self.read_message()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\websockets\legacy\protocol.py", line 1033, in read_message
+    frame = await self.read_data_frame(max_size=self.max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\websockets\legacy\protocol.py", line 1108, in read_data_frame
+    frame = await self.read_frame(max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\websockets\legacy\protocol.py", line 1165, in read_frame
+    frame = await Frame.read(
+            ^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\websockets\legacy\framing.py", line 68, in read
+    data = await reader(2)
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\abhi1\AppData\Local\Programs\Python\Python314\Lib\asyncio\streams.py", line 767, in readexactly
+    raise exceptions.IncompleteReadError(incomplete, n)
+asyncio.exceptions.IncompleteReadError: 0 bytes read on a total of 2 expected bytes
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\uvicorn\protocols\websockets\websockets_impl.py", line 332, in asgi_send
+    await self.send(data)  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\websockets\legacy\protocol.py", line 635, in send
+    await self.ensure_open()
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\websockets\legacy\protocol.py", line 939, in ensure_open
+    raise self.connection_closed_exc()
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\websockets.py", line 85, in send
+    await self._send(message)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\_exception_handler.py", line 48, in sender
+    await send(message)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\uvicorn\protocols\websockets\websockets_impl.py", line 345, in asgi_send
+    raise ClientDisconnected from exc
+uvicorn.protocols.utils.ClientDisconnected
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\uvicorn\protocols\websockets\websockets_impl.py", line 244, in run_asgi
+    result = await self.app(self.scope, self.asgi_receive, self.asgi_send)  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 70, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\fastapi\applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\middleware\errors.py", line 152, in __call__
+    await self.app(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\middleware\cors.py", line 77, in __call__
+    await self.app(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\routing.py", line 715, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\routing.py", line 735, in app
+    await route.handle(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\routing.py", line 362, in handle
+    await self.app(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\routing.py", line 95, in app
+    await wrap_app_handling_exceptions(app, session)(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\routing.py", line 93, in app
+    await func(session)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\fastapi\routing.py", line 383, in app
+    await dependant.call(**solved_result.values)
+  File "D:\Kotak-neo-api-v2\backend\routes\paper_trading.py", line 27, in future_stream
+    await websocket.send_json({"type": "status", "state": "error", "message": detail})
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\websockets.py", line 175, in send_json
+    await self.send({"type": "websocket.send", "text": text})
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\websockets.py", line 88, in send
+    raise WebSocketDisconnect(code=1006)
+starlette.websockets.WebSocketDisconnect
+2026-10-03 12:39:47,801 - neo_api_client.websocket.feed.client - INFO - sfeed_authenticated {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:39:47,836 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,851 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,856 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:47,891 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed_exchange
+2026-10-03 12:39:48,044 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:48,058 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:48,065 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:48,080 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:48,092 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:48,095 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:48,095 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:48,096 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:48,096 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:48,096 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+INFO:     connection closed
+2026-10-03 12:39:48,346 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'scrips_lite', 'tokens': 2}
+2026-10-03 12:39:48,383 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:39:48,384 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+INFO:     connection closed
+INFO:     connection closed
+INFO:     ('127.0.0.1', 52146) - "WebSocket /api/paper-trading/future-stream" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     ('127.0.0.1', 56858) - "WebSocket /api/paper-trading/future-stream" [accepted]
+INFO:     connection open
+INFO:     ('127.0.0.1', 49814) - "WebSocket /api/watchlist/stream" [accepted]
+INFO:     connection open
+INFO:     ('127.0.0.1', 62072) - "WebSocket /api/positions/stream?tokens=%5B%7B%22symbol%22%3A%22ADANIENT-EQ%22%2C%22exchange_segment%22%3A%22nse_cm%22%2C%22instrument_token%22%3A%2225%22%7D%2C%7B%22symbol%22%3A%22NIFTY26O0622400CE%22%2C%22exchange_segment%22%3A%22nse_fo%22%2C%22instrument_token%22%3A%2240687%22%7D%5D" [accepted]
+INFO:     connection open
+2026-10-03 12:41:09,717 - backend.kotak_client - WARNING - Kotak order book response summary: stat='Ok' stCode='200' envelope_keys=('data', 'stCode', 'stat') rows=6 row_keys=('GuiOrdId', 'actId', 'algCat', 'algId', 'algSeqNo', 'appInstlId', 'avgPrc', 'boeSec', 'brdLtQty', 'brkClnt', 'classification', 'cnlQty', 'coPct', 'defMktProV', 'dscQty', 'dscQtyPct', 'exCfmTm', 'exOrdId', 'exSeg', 'exUsrInfo', 'expDt', 'expDtSsb', 'fldQty', 'genDen', 'genNum', 'hsUpTm', 'it', 'locId', 'lotSz', 'mfdBy', 'minQty', 'mktPro', 'mktProFlg', 'mktProPct', 'multiplier', 'nOrdNo', 'noMktProFlg', 'odCrt', 'optTp', 'ordAutSt', 'ordDtTm', 'ordEntTm', 'ordGenTp', 'ordModNo', 'ordSrc', 'ordSt', 'ordValDt', 'prc', 'prcDen', 'prcNum', 'prcTp', 'precision', 'prod', 'qty', 'refLmtPrc', 'rejRsn', 'reqId', 'rmk', 'rptTp', 'series', 'sipInd', 'stat', 'stkPrc', 'strategyCode', 'sym', 'symOrdId', 'tckSz', 'tok', 'trdSym', 'trgPrc', 'trnsTp', 'uSec', 'unFldSz', 'updRecvTm', 'usrId', 'vendorCode', 'vldt')
+2026-10-03 12:41:10,043 - neo_api_client.websocket.feed.client - INFO - sfeed_connected {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:41:10,085 - neo_api_client.websocket.feed.client - INFO - sfeed_connected {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:41:10,161 - neo_api_client.websocket.feed.client - INFO - sfeed_authenticated {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:41:10,183 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'scrips_lite', 'tokens': 50}
+2026-10-03 12:41:10,196 - neo_api_client.websocket.feed.client - INFO - sfeed_authenticated {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:41:10,265 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,281 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,300 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,321 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,328 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,350 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,356 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,362 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,383 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,413 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,425 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,432 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,447 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,460 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,482 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,487 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,501 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,522 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,536 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,544 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,550 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,557 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,564 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,585 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,598 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,619 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,626 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,633 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,641 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,647 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,655 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,661 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,668 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,675 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,682 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,689 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,696 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,703 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,710 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,717 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,734 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,744 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,752 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,758 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,779 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,800 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,807 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,814 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,821 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,828 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,856 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'index', 'tokens': 3}
+2026-10-03 12:41:10,918 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,939 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,946 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:10,960 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed_exchange
+2026-10-03 12:41:11,036 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:11,043 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:11,050 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:11,057 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:11,092 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:11,099 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:11,120 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:11,127 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:11,147 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:11,154 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:11,300 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'scrips_lite', 'tokens': 2}
+2026-10-03 12:41:11,390 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:41:11,397 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\websockets\legacy\protocol.py", line 963, in transfer_data
+    message = await self.read_message()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\websockets\legacy\protocol.py", line 1033, in read_message
+    frame = await self.read_data_frame(max_size=self.max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\websockets\legacy\protocol.py", line 1108, in read_data_frame
+    frame = await self.read_frame(max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\websockets\legacy\protocol.py", line 1165, in read_frame
+    frame = await Frame.read(
+            ^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\websockets\legacy\framing.py", line 68, in read
+    data = await reader(2)
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\abhi1\AppData\Local\Programs\Python\Python314\Lib\asyncio\streams.py", line 767, in readexactly
+    raise exceptions.IncompleteReadError(incomplete, n)
+asyncio.exceptions.IncompleteReadError: 0 bytes read on a total of 2 expected bytes
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\uvicorn\protocols\websockets\websockets_impl.py", line 332, in asgi_send
+    await self.send(data)  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\websockets\legacy\protocol.py", line 635, in send
+    await self.ensure_open()
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\websockets\legacy\protocol.py", line 939, in ensure_open
+    raise self.connection_closed_exc()
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\websockets.py", line 85, in send
+    await self._send(message)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\_exception_handler.py", line 48, in sender
+    await send(message)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\uvicorn\protocols\websockets\websockets_impl.py", line 345, in asgi_send
+    raise ClientDisconnected from exc
+uvicorn.protocols.utils.ClientDisconnected
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\uvicorn\protocols\websockets\websockets_impl.py", line 244, in run_asgi
+    result = await self.app(self.scope, self.asgi_receive, self.asgi_send)  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 70, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\fastapi\applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\middleware\errors.py", line 152, in __call__
+    await self.app(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\middleware\cors.py", line 77, in __call__
+    await self.app(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\routing.py", line 715, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\routing.py", line 735, in app
+    await route.handle(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\routing.py", line 362, in handle
+    await self.app(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\routing.py", line 95, in app
+    await wrap_app_handling_exceptions(app, session)(scope, receive, send)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\routing.py", line 93, in app
+    await func(session)
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\fastapi\routing.py", line 383, in app
+    await dependant.call(**solved_result.values)
+  File "D:\Kotak-neo-api-v2\backend\routes\paper_trading.py", line 27, in future_stream
+    await websocket.send_json({"type": "status", "state": "error", "message": detail})
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\websockets.py", line 175, in send_json
+    await self.send({"type": "websocket.send", "text": text})
+  File "d:\Kotak-neo-api-v2\.venv\Lib\site-packages\starlette\websockets.py", line 88, in send
+    raise WebSocketDisconnect(code=1006)
+starlette.websockets.WebSocketDisconnect
+INFO:     connection closed
+2026-10-03 12:43:05,931 - backend.kotak_client - WARNING - Kotak order book response summary: stat='Ok' stCode='200' envelope_keys=('data', 'stCode', 'stat') rows=6 row_keys=('GuiOrdId', 'actId', 'algCat', 'algId', 'algSeqNo', 'appInstlId', 'avgPrc', 'boeSec', 'brdLtQty', 'brkClnt', 'classification', 'cnlQty', 'coPct', 'defMktProV', 'dscQty', 'dscQtyPct', 'exCfmTm', 'exOrdId', 'exSeg', 'exUsrInfo', 'expDt', 'expDtSsb', 'fldQty', 'genDen', 'genNum', 'hsUpTm', 'it', 'locId', 'lotSz', 'mfdBy', 'minQty', 'mktPro', 'mktProFlg', 'mktProPct', 'multiplier', 'nOrdNo', 'noMktProFlg', 'odCrt', 'optTp', 'ordAutSt', 'ordDtTm', 'ordEntTm', 'ordGenTp', 'ordModNo', 'ordSrc', 'ordSt', 'ordValDt', 'prc', 'prcDen', 'prcNum', 'prcTp', 'precision', 'prod', 'qty', 'refLmtPrc', 'rejLongDesc', 'rejRsn', 'rejShortDesc', 'reqId', 'rmk', 'rptTp', 'series', 'sipInd', 'stat', 'stkPrc', 'strategyCode', 'sym', 'symOrdId', 'tckSz', 'tok', 'trdSym', 'trgPrc', 'trnsTp', 'uSec', 'unFldSz', 'updRecvTm', 'usrId', 'vendorCode', 'vldt')
+2026-10-03 12:43:09,142 - backend.kotak_client - WARNING - Kotak order book response summary: stat='Ok' stCode='200' envelope_keys=('data', 'stCode', 'stat') rows=6 row_keys=('GuiOrdId', 'actId', 'algCat', 'algId', 'algSeqNo', 'appInstlId', 'avgPrc', 'boeSec', 'brdLtQty', 'brkClnt', 'classification', 'cnlQty', 'coPct', 'defMktProV', 'dscQty', 'dscQtyPct', 'exCfmTm', 'exOrdId', 'exSeg', 'exUsrInfo', 'expDt', 'expDtSsb', 'fldQty', 'genDen', 'genNum', 'hsUpTm', 'it', 'locId', 'lotSz', 'mfdBy', 'minQty', 'mktPro', 'mktProFlg', 'mktProPct', 'multiplier', 'nOrdNo', 'noMktProFlg', 'odCrt', 'optTp', 'ordAutSt', 'ordDtTm', 'ordEntTm', 'ordGenTp', 'ordModNo', 'ordSrc', 'ordSt', 'ordValDt', 'prc', 'prcDen', 'prcNum', 'prcTp', 'precision', 'prod', 'qty', 'refLmtPrc', 'rejRsn', 'reqId', 'rmk', 'rptTp', 'series', 'sipInd', 'stat', 'stkPrc', 'strategyCode', 'sym', 'symOrdId', 'tckSz', 'tok', 'trdSym', 'trgPrc', 'trnsTp', 'uSec', 'unFldSz', 'updRecvTm', 'usrId', 'vendorCode', 'vldt')
+INFO:     connection closed
+INFO:     ('127.0.0.1', 58268) - "WebSocket /api/positions/stream?tokens=%5B%7B%22symbol%22%3A%22NIFTY26O0622400CE%22%2C%22exchange_segment%22%3A%22nse_fo%22%2C%22instrument_token%22%3A%2240687%22%7D%2C%7B%22symbol%22%3A%22ADANIENT-EQ%22%2C%22exchange_segment%22%3A%22nse_cm%22%2C%22instrument_token%22%3A%2225%22%7D%5D" [accepted]
+INFO:     connection open
+2026-10-03 12:43:12,872 - neo_api_client.websocket.feed.client - INFO - sfeed_connected {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:43:12,873 - neo_api_client.websocket.feed.client - INFO - sfeed_authenticated {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:43:13,217 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'scrips_lite', 'tokens': 2}
+2026-10-03 12:43:13,251 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:43:13,252 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:43:15,502 - backend.kotak_client - WARNING - Kotak order book response summary: stat='Ok' stCode='200' envelope_keys=('data', 'stCode', 'stat') rows=6 row_keys=('GuiOrdId', 'actId', 'algCat', 'algId', 'algSeqNo', 'appInstlId', 'avgPrc', 'boeSec', 'brdLtQty', 'brkClnt', 'classification', 'cnlQty', 'coPct', 'defMktProV', 'dscQty', 'dscQtyPct', 'exCfmTm', 'exOrdId', 'exSeg', 'exUsrInfo', 'expDt', 'expDtSsb', 'fldQty', 'genDen', 'genNum', 'hsUpTm', 'it', 'locId', 'lotSz', 'mfdBy', 'minQty', 'mktPro', 'mktProFlg', 'mktProPct', 'multiplier', 'nOrdNo', 'noMktProFlg', 'odCrt', 'optTp', 'ordAutSt', 'ordDtTm', 'ordEntTm', 'ordGenTp', 'ordModNo', 'ordSrc', 'ordSt', 'ordValDt', 'prc', 'prcDen', 'prcNum', 'prcTp', 'precision', 'prod', 'qty', 'refLmtPrc', 'rejLongDesc', 'rejRsn', 'rejShortDesc', 'reqId', 'rmk', 'rptTp', 'series', 'sipInd', 'stat', 'stkPrc', 'strategyCode', 'sym', 'symOrdId', 'tckSz', 'tok', 'trdSym', 'trgPrc', 'trnsTp', 'uSec', 'unFldSz', 'updRecvTm', 'usrId', 'vendorCode', 'vldt')
+INFO:     connection closed
+INFO:     ('127.0.0.1', 62624) - "WebSocket /api/positions/stream?tokens=%5B%7B%22symbol%22%3A%22ADANIENT-EQ%22%2C%22exchange_segment%22%3A%22nse_cm%22%2C%22instrument_token%22%3A%2225%22%7D%2C%7B%22symbol%22%3A%22NIFTY26O0622400CE%22%2C%22exchange_segment%22%3A%22nse_fo%22%2C%22instrument_token%22%3A%2240687%22%7D%5D" [accepted]
+INFO:     connection open
+2026-10-03 12:43:18,063 - neo_api_client.websocket.feed.client - INFO - sfeed_connected {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:43:18,064 - neo_api_client.websocket.feed.client - INFO - sfeed_authenticated {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:43:18,451 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'scrips_lite', 'tokens': 2}
+2026-10-03 12:43:18,485 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:43:18,486 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:43:18,686 - backend.kotak_client - WARNING - Kotak order book response summary: stat='Ok' stCode='200' envelope_keys=('data', 'stCode', 'stat') rows=6 row_keys=('GuiOrdId', 'actId', 'algCat', 'algId', 'algSeqNo', 'appInstlId', 'avgPrc', 'boeSec', 'brdLtQty', 'brkClnt', 'classification', 'cnlQty', 'coPct', 'defMktProV', 'dscQty', 'dscQtyPct', 'exCfmTm', 'exOrdId', 'exSeg', 'exUsrInfo', 'expDt', 'expDtSsb', 'fldQty', 'genDen', 'genNum', 'hsUpTm', 'it', 'locId', 'lotSz', 'mfdBy', 'minQty', 'mktPro', 'mktProFlg', 'mktProPct', 'multiplier', 'nOrdNo', 'noMktProFlg', 'odCrt', 'optTp', 'ordAutSt', 'ordDtTm', 'ordEntTm', 'ordGenTp', 'ordModNo', 'ordSrc', 'ordSt', 'ordValDt', 'prc', 'prcDen', 'prcNum', 'prcTp', 'precision', 'prod', 'qty', 'refLmtPrc', 'rejRsn', 'reqId', 'rmk', 'rptTp', 'series', 'sipInd', 'stat', 'stkPrc', 'strategyCode', 'sym', 'symOrdId', 'tckSz', 'tok', 'trdSym', 'trgPrc', 'trnsTp', 'uSec', 'unFldSz', 'updRecvTm', 'usrId', 'vendorCode', 'vldt')
+2026-10-03 12:43:19,296 - backend.kotak_client - WARNING - Kotak order rejected: client_order_id='EXId88b2d1344b9' http_status=403 stCode=1041 stat='Not_Ok' errMsg='Market order rejected: Last Traded Price (LTP) not available for this instrument. Please try placing a limit order' error=None
+2026-10-03 12:43:25,082 - backend.kotak_client - WARNING - Kotak order book response summary: stat='Ok' stCode='200' envelope_keys=('data', 'stCode', 'stat') rows=6 row_keys=('GuiOrdId', 'actId', 'algCat', 'algId', 'algSeqNo', 'appInstlId', 'avgPrc', 'boeSec', 'brdLtQty', 'brkClnt', 'classification', 'cnlQty', 'coPct', 'defMktProV', 'dscQty', 'dscQtyPct', 'exCfmTm', 'exOrdId', 'exSeg', 'exUsrInfo', 'expDt', 'expDtSsb', 'fldQty', 'genDen', 'genNum', 'hsUpTm', 'it', 'locId', 'lotSz', 'mfdBy', 'minQty', 'mktPro', 'mktProFlg', 'mktProPct', 'multiplier', 'nOrdNo', 'noMktProFlg', 'odCrt', 'optTp', 'ordAutSt', 'ordDtTm', 'ordEntTm', 'ordGenTp', 'ordModNo', 'ordSrc', 'ordSt', 'ordValDt', 'prc', 'prcDen', 'prcNum', 'prcTp', 'precision', 'prod', 'qty', 'refLmtPrc', 'rejLongDesc', 'rejRsn', 'rejShortDesc', 'reqId', 'rmk', 'rptTp', 'series', 'sipInd', 'stat', 'stkPrc', 'strategyCode', 'sym', 'symOrdId', 'tckSz', 'tok', 'trdSym', 'trgPrc', 'trnsTp', 'uSec', 'unFldSz', 'updRecvTm', 'usrId', 'vendorCode', 'vldt')
+INFO:     connection closed
+INFO:     ('127.0.0.1', 50313) - "WebSocket /api/positions/stream?tokens=%5B%7B%22symbol%22%3A%22NIFTY26O0622400CE%22%2C%22exchange_segment%22%3A%22nse_fo%22%2C%22instrument_token%22%3A%2240687%22%7D%2C%7B%22symbol%22%3A%22ADANIENT-EQ%22%2C%22exchange_segment%22%3A%22nse_cm%22%2C%22instrument_token%22%3A%2225%22%7D%5D" [accepted]
+INFO:     connection open
+2026-10-03 12:43:28,079 - backend.kotak_client - WARNING - Kotak order book response summary: stat='Ok' stCode='200' envelope_keys=('data', 'stCode', 'stat') rows=7 row_keys=('GuiOrdId', 'actId', 'algCat', 'algId', 'algSeqNo', 'appInstlId', 'avgPrc', 'boeSec', 'brdLtQty', 'brkClnt', 'classification', 'cnlQty', 'coPct', 'defMktProV', 'dscQty', 'dscQtyPct', 'exCfmTm', 'exOrdId', 'exSeg', 'exUsrInfo', 'expDt', 'expDtSsb', 'fldQty', 'genDen', 'genNum', 'hsUpTm', 'it', 'locId', 'lotSz', 'mfdBy', 'minQty', 'mktPro', 'mktProFlg', 'mktProPct', 'multiplier', 'nOrdNo', 'noMktProFlg', 'odCrt', 'optTp', 'ordAutSt', 'ordDtTm', 'ordEntTm', 'ordGenTp', 'ordModNo', 'ordSrc', 'ordSt', 'ordValDt', 'prc', 'prcDen', 'prcNum', 'prcTp', 'precision', 'prod', 'qty', 'refLmtPrc', 'rejLongDesc', 'rejRsn', 'rejShortDesc', 'reqId', 'rmk', 'rptTp', 'series', 'sipInd', 'stat', 'stkPrc', 'strategyCode', 'sym', 'symOrdId', 'tckSz', 'tok', 'trdSym', 'trgPrc', 'trnsTp', 'uSec', 'unFldSz', 'updRecvTm', 'usrId', 'vendorCode', 'vldt')
+2026-10-03 12:43:28,229 - neo_api_client.websocket.feed.client - INFO - sfeed_connected {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:43:28,231 - neo_api_client.websocket.feed.client - INFO - sfeed_authenticated {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:43:28,634 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'scrips_lite', 'tokens': 2}
+2026-10-03 12:43:28,669 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:43:28,670 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:43:31,264 - backend.kotak_client - WARNING - Kotak order book response summary: stat='Ok' stCode='200' envelope_keys=('data', 'stCode', 'stat') rows=7 row_keys=('GuiOrdId', 'actId', 'algCat', 'algId', 'algSeqNo', 'appInstlId', 'avgPrc', 'boeSec', 'brdLtQty', 'brkClnt', 'classification', 'cnlQty', 'coPct', 'defMktProV', 'dscQty', 'dscQtyPct', 'exCfmTm', 'exOrdId', 'exSeg', 'exUsrInfo', 'expDt', 'expDtSsb', 'fldQty', 'genDen', 'genNum', 'hsUpTm', 'it', 'locId', 'lotSz', 'mfdBy', 'minQty', 'mktPro', 'mktProFlg', 'mktProPct', 'multiplier', 'nOrdNo', 'noMktProFlg', 'odCrt', 'optTp', 'ordAutSt', 'ordDtTm', 'ordEntTm', 'ordGenTp', 'ordModNo', 'ordSrc', 'ordSt', 'ordValDt', 'prc', 'prcDen', 'prcNum', 'prcTp', 'precision', 'prod', 'qty', 'refLmtPrc', 'rejRsn', 'reqId', 'rmk', 'rptTp', 'series', 'sipInd', 'stat', 'stkPrc', 'strategyCode', 'sym', 'symOrdId', 'tckSz', 'tok', 'trdSym', 'trgPrc', 'trnsTp', 'uSec', 'unFldSz', 'updRecvTm', 'usrId', 'vendorCode', 'vldt')
+INFO:     connection closed
+INFO:     ('127.0.0.1', 51044) - "WebSocket /api/positions/stream?tokens=%5B%7B%22symbol%22%3A%22ADANIENT-EQ%22%2C%22exchange_segment%22%3A%22nse_cm%22%2C%22instrument_token%22%3A%2225%22%7D%2C%7B%22symbol%22%3A%22NIFTY26O0622400CE%22%2C%22exchange_segment%22%3A%22nse_fo%22%2C%22instrument_token%22%3A%2240687%22%7D%5D" [accepted]
+INFO:     connection open
+2026-10-03 12:43:33,418 - neo_api_client.websocket.feed.client - INFO - sfeed_connected {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:43:33,418 - neo_api_client.websocket.feed.client - INFO - sfeed_authenticated {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:43:33,749 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'scrips_lite', 'tokens': 2}
+2026-10-03 12:43:33,788 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:43:33,788 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:43:40,840 - backend.kotak_client - WARNING - Kotak order rejected: client_order_id='EXI99e9e55d40c9' http_status=403 stCode=1041 stat='Not_Ok' errMsg='Market order rejected: Last Traded Price (LTP) not available for this instrument. Please try placing a limit order' error=None
+2026-10-03 12:43:51,989 - backend.kotak_client - WARNING - Kotak order book response summary: stat='Ok' stCode='200' envelope_keys=('data', 'stCode', 'stat') rows=8 row_keys=('GuiOrdId', 'actId', 'algCat', 'algId', 'algSeqNo', 'appInstlId', 'avgPrc', 'boeSec', 'brdLtQty', 'brkClnt', 'classification', 'cnlQty', 'coPct', 'defMktProV', 'dscQty', 'dscQtyPct', 'exCfmTm', 'exOrdId', 'exSeg', 'exUsrInfo', 'expDt', 'expDtSsb', 'fldQty', 'genDen', 'genNum', 'hsUpTm', 'it', 'locId', 'lotSz', 'mfdBy', 'minQty', 'mktPro', 'mktProFlg', 'mktProPct', 'multiplier', 'nOrdNo', 'noMktProFlg', 'odCrt', 'optTp', 'ordAutSt', 'ordDtTm', 'ordEntTm', 'ordGenTp', 'ordModNo', 'ordSrc', 'ordSt', 'ordValDt', 'prc', 'prcDen', 'prcNum', 'prcTp', 'precision', 'prod', 'qty', 'refLmtPrc', 'rejRsn', 'reqId', 'rmk', 'rptTp', 'series', 'sipInd', 'stat', 'stkPrc', 'strategyCode', 'sym', 'symOrdId', 'tckSz', 'tok', 'trdSym', 'trgPrc', 'trnsTp', 'uSec', 'unFldSz', 'updRecvTm', 'usrId', 'vendorCode', 'vldt')
+2026-10-03 12:43:58,473 - backend.kotak_client - WARNING - Kotak order book response summary: stat='Ok' stCode='200' envelope_keys=('data', 'stCode', 'stat') rows=8 row_keys=('GuiOrdId', 'actId', 'algCat', 'algId', 'algSeqNo', 'appInstlId', 'avgPrc', 'boeSec', 'brdLtQty', 'brkClnt', 'classification', 'cnlQty', 'coPct', 'defMktProV', 'dscQty', 'dscQtyPct', 'exCfmTm', 'exOrdId', 'exSeg', 'exUsrInfo', 'expDt', 'expDtSsb', 'fldQty', 'genDen', 'genNum', 'hsUpTm', 'it', 'locId', 'lotSz', 'mfdBy', 'minQty', 'mktPro', 'mktProFlg', 'mktProPct', 'multiplier', 'nOrdNo', 'noMktProFlg', 'odCrt', 'optTp', 'ordAutSt', 'ordDtTm', 'ordEntTm', 'ordGenTp', 'ordModNo', 'ordSrc', 'ordSt', 'ordValDt', 'prc', 'prcDen', 'prcNum', 'prcTp', 'precision', 'prod', 'qty', 'refLmtPrc', 'rejLongDesc', 'rejRsn', 'rejShortDesc', 'reqId', 'rmk', 'rptTp', 'series', 'sipInd', 'stat', 'stkPrc', 'strategyCode', 'sym', 'symOrdId', 'tckSz', 'tok', 'trdSym', 'trgPrc', 'trnsTp', 'uSec', 'unFldSz', 'updRecvTm', 'usrId', 'vendorCode', 'vldt')
+2026-10-03 12:44:01,870 - backend.kotak_client - WARNING - Kotak order book response summary: stat='Ok' stCode='200' envelope_keys=('data', 'stCode', 'stat') rows=8 row_keys=('GuiOrdId', 'actId', 'algCat', 'algId', 'algSeqNo', 'appInstlId', 'avgPrc', 'boeSec', 'brdLtQty', 'brkClnt', 'classification', 'cnlQty', 'coPct', 'defMktProV', 'dscQty', 'dscQtyPct', 'exCfmTm', 'exOrdId', 'exSeg', 'exUsrInfo', 'expDt', 'expDtSsb', 'fldQty', 'genDen', 'genNum', 'hsUpTm', 'it', 'locId', 'lotSz', 'mfdBy', 'minQty', 'mktPro', 'mktProFlg', 'mktProPct', 'multiplier', 'nOrdNo', 'noMktProFlg', 'odCrt', 'optTp', 'ordAutSt', 'ordDtTm', 'ordEntTm', 'ordGenTp', 'ordModNo', 'ordSrc', 'ordSt', 'ordValDt', 'prc', 'prcDen', 'prcNum', 'prcTp', 'precision', 'prod', 'qty', 'refLmtPrc', 'rejRsn', 'reqId', 'rmk', 'rptTp', 'series', 'sipInd', 'stat', 'stkPrc', 'strategyCode', 'sym', 'symOrdId', 'tckSz', 'tok', 'trdSym', 'trgPrc', 'trnsTp', 'uSec', 'unFldSz', 'updRecvTm', 'usrId', 'vendorCode', 'vldt')
+2026-10-03 12:44:05,095 - backend.kotak_client - WARNING - Kotak order book response summary: stat='Ok' stCode='200' envelope_keys=('data', 'stCode', 'stat') rows=8 row_keys=('GuiOrdId', 'actId', 'algCat', 'algId', 'algSeqNo', 'appInstlId', 'avgPrc', 'boeSec', 'brdLtQty', 'brkClnt', 'classification', 'cnlQty', 'coPct', 'defMktProV', 'dscQty', 'dscQtyPct', 'exCfmTm', 'exOrdId', 'exSeg', 'exUsrInfo', 'expDt', 'expDtSsb', 'fldQty', 'genDen', 'genNum', 'hsUpTm', 'it', 'locId', 'lotSz', 'mfdBy', 'minQty', 'mktPro', 'mktProFlg', 'mktProPct', 'multiplier', 'nOrdNo', 'noMktProFlg', 'odCrt', 'optTp', 'ordAutSt', 'ordDtTm', 'ordEntTm', 'ordGenTp', 'ordModNo', 'ordSrc', 'ordSt', 'ordValDt', 'prc', 'prcDen', 'prcNum', 'prcTp', 'precision', 'prod', 'qty', 'refLmtPrc', 'rejLongDesc', 'rejRsn', 'rejShortDesc', 'reqId', 'rmk', 'rptTp', 'series', 'sipInd', 'stat', 'stkPrc', 'strategyCode', 'sym', 'symOrdId', 'tckSz', 'tok', 'trdSym', 'trgPrc', 'trnsTp', 'uSec', 'unFldSz', 'updRecvTm', 'usrId', 'vendorCode', 'vldt')
+2026-10-03 12:44:05,274 - backend.kotak_client - WARNING - Kotak order book response summary: stat='Ok' stCode='200' envelope_keys=('data', 'stCode', 'stat') rows=8 row_keys=('GuiOrdId', 'actId', 'algCat', 'algId', 'algSeqNo', 'appInstlId', 'avgPrc', 'boeSec', 'brdLtQty', 'brkClnt', 'classification', 'cnlQty', 'coPct', 'defMktProV', 'dscQty', 'dscQtyPct', 'exCfmTm', 'exOrdId', 'exSeg', 'exUsrInfo', 'expDt', 'expDtSsb', 'fldQty', 'genDen', 'genNum', 'hsUpTm', 'it', 'locId', 'lotSz', 'mfdBy', 'minQty', 'mktPro', 'mktProFlg', 'mktProPct', 'multiplier', 'nOrdNo', 'noMktProFlg', 'odCrt', 'optTp', 'ordAutSt', 'ordDtTm', 'ordEntTm', 'ordGenTp', 'ordModNo', 'ordSrc', 'ordSt', 'ordValDt', 'prc', 'prcDen', 'prcNum', 'prcTp', 'precision', 'prod', 'qty', 'refLmtPrc', 'rejRsn', 'reqId', 'rmk', 'rptTp', 'series', 'sipInd', 'stat', 'stkPrc', 'strategyCode', 'sym', 'symOrdId', 'tckSz', 'tok', 'trdSym', 'trgPrc', 'trnsTp', 'uSec', 'unFldSz', 'updRecvTm', 'usrId', 'vendorCode', 'vldt')
+2026-10-03 12:44:08,473 - backend.kotak_client - WARNING - Kotak order book response summary: stat='Ok' stCode='200' envelope_keys=('data', 'stCode', 'stat') rows=8 row_keys=('GuiOrdId', 'actId', 'algCat', 'algId', 'algSeqNo', 'appInstlId', 'avgPrc', 'boeSec', 'brdLtQty', 'brkClnt', 'classification', 'cnlQty', 'coPct', 'defMktProV', 'dscQty', 'dscQtyPct', 'exCfmTm', 'exOrdId', 'exSeg', 'exUsrInfo', 'expDt', 'expDtSsb', 'fldQty', 'genDen', 'genNum', 'hsUpTm', 'it', 'locId', 'lotSz', 'mfdBy', 'minQty', 'mktPro', 'mktProFlg', 'mktProPct', 'multiplier', 'nOrdNo', 'noMktProFlg', 'odCrt', 'optTp', 'ordAutSt', 'ordDtTm', 'ordEntTm', 'ordGenTp', 'ordModNo', 'ordSrc', 'ordSt', 'ordValDt', 'prc', 'prcDen', 'prcNum', 'prcTp', 'precision', 'prod', 'qty', 'refLmtPrc', 'rejLongDesc', 'rejRsn', 'rejShortDesc', 'reqId', 'rmk', 'rptTp', 'series', 'sipInd', 'stat', 'stkPrc', 'strategyCode', 'sym', 'symOrdId', 'tckSz', 'tok', 'trdSym', 'trgPrc', 'trnsTp', 'uSec', 'unFldSz', 'updRecvTm', 'usrId', 'vendorCode', 'vldt')
+2026-10-03 12:44:10,656 - backend.kotak_client - WARNING - Kotak order book response summary: stat='Ok' stCode='200' envelope_keys=('data', 'stCode', 'stat') rows=8 row_keys=('GuiOrdId', 'actId', 'algCat', 'algId', 'algSeqNo', 'appInstlId', 'avgPrc', 'boeSec', 'brdLtQty', 'brkClnt', 'classification', 'cnlQty', 'coPct', 'defMktProV', 'dscQty', 'dscQtyPct', 'exCfmTm', 'exOrdId', 'exSeg', 'exUsrInfo', 'expDt', 'expDtSsb', 'fldQty', 'genDen', 'genNum', 'hsUpTm', 'it', 'locId', 'lotSz', 'mfdBy', 'minQty', 'mktPro', 'mktProFlg', 'mktProPct', 'multiplier', 'nOrdNo', 'noMktProFlg', 'odCrt', 'optTp', 'ordAutSt', 'ordDtTm', 'ordEntTm', 'ordGenTp', 'ordModNo', 'ordSrc', 'ordSt', 'ordValDt', 'prc', 'prcDen', 'prcNum', 'prcTp', 'precision', 'prod', 'qty', 'refLmtPrc', 'rejRsn', 'reqId', 'rmk', 'rptTp', 'series', 'sipInd', 'stat', 'stkPrc', 'strategyCode', 'sym', 'symOrdId', 'tckSz', 'tok', 'trdSym', 'trgPrc', 'trnsTp', 'uSec', 'unFldSz', 'updRecvTm', 'usrId', 'vendorCode', 'vldt')
+INFO:     connection closed
+INFO:     ('127.0.0.1', 54219) - "WebSocket /api/positions/stream?tokens=%5B%7B%22symbol%22%3A%22NIFTY26O0622400CE%22%2C%22exchange_segment%22%3A%22nse_fo%22%2C%22instrument_token%22%3A%2240687%22%7D%2C%7B%22symbol%22%3A%22ADANIENT-EQ%22%2C%22exchange_segment%22%3A%22nse_cm%22%2C%22instrument_token%22%3A%2225%22%7D%5D" [accepted]
+INFO:     connection open
+2026-10-03 12:44:13,147 - neo_api_client.websocket.feed.client - INFO - sfeed_connected {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:44:13,148 - neo_api_client.websocket.feed.client - INFO - sfeed_authenticated {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:44:14,757 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'scrips_lite', 'tokens': 2}
+2026-10-03 12:44:15,842 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:44:15,842 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+INFO:     connection closed
+INFO:     ('127.0.0.1', 56125) - "WebSocket /api/positions/stream?tokens=%5B%7B%22symbol%22%3A%22ADANIENT-EQ%22%2C%22exchange_segment%22%3A%22nse_cm%22%2C%22instrument_token%22%3A%2225%22%7D%2C%7B%22symbol%22%3A%22NIFTY26O0622400CE%22%2C%22exchange_segment%22%3A%22nse_fo%22%2C%22instrument_token%22%3A%2240687%22%7D%5D" [accepted]
+INFO:     connection open
+2026-10-03 12:44:18,312 - neo_api_client.websocket.feed.client - INFO - sfeed_connected {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:44:18,313 - neo_api_client.websocket.feed.client - INFO - sfeed_authenticated {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:44:18,661 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'scrips_lite', 'tokens': 2}
+2026-10-03 12:44:18,696 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:44:18,697 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+INFO:     connection closed
+INFO:     ('127.0.0.1', 58222) - "WebSocket /api/positions/stream?tokens=%5B%7B%22symbol%22%3A%22NIFTY26O0622400CE%22%2C%22exchange_segment%22%3A%22nse_fo%22%2C%22instrument_token%22%3A%2240687%22%7D%2C%7B%22symbol%22%3A%22ADANIENT-EQ%22%2C%22exchange_segment%22%3A%22nse_cm%22%2C%22instrument_token%22%3A%2225%22%7D%5D" [accepted]
+INFO:     connection open
+2026-10-03 12:44:28,676 - neo_api_client.websocket.feed.client - INFO - sfeed_connected {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:44:28,676 - neo_api_client.websocket.feed.client - INFO - sfeed_authenticated {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:44:29,038 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'scrips_lite', 'tokens': 2}
+2026-10-03 12:44:29,077 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:44:29,077 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+INFO:     connection closed
+INFO:     ('127.0.0.1', 53359) - "WebSocket /api/positions/stream?tokens=%5B%7B%22symbol%22%3A%22ADANIENT-EQ%22%2C%22exchange_segment%22%3A%22nse_cm%22%2C%22instrument_token%22%3A%2225%22%7D%2C%7B%22symbol%22%3A%22NIFTY26O0622400CE%22%2C%22exchange_segment%22%3A%22nse_fo%22%2C%22instrument_token%22%3A%2240687%22%7D%5D" [accepted]
+INFO:     connection open
+2026-10-03 12:44:33,885 - neo_api_client.websocket.feed.client - INFO - sfeed_connected {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:44:33,886 - neo_api_client.websocket.feed.client - INFO - sfeed_authenticated {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:44:34,244 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'scrips_lite', 'tokens': 2}
+2026-10-03 12:44:34,282 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:44:34,282 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:44:39,380 - backend.kotak_client - WARNING - Kotak order book response summary: stat='Ok' stCode='200' envelope_keys=('data', 'stCode', 'stat') rows=8 row_keys=('GuiOrdId', 'actId', 'algCat', 'algId', 'algSeqNo', 'appInstlId', 'avgPrc', 'boeSec', 'brdLtQty', 'brkClnt', 'classification', 'cnlQty', 'coPct', 'defMktProV', 'dscQty', 'dscQtyPct', 'exCfmTm', 'exOrdId', 'exSeg', 'exUsrInfo', 'expDt', 'expDtSsb', 'fldQty', 'genDen', 'genNum', 'hsUpTm', 'it', 'locId', 'lotSz', 'mfdBy', 'minQty', 'mktPro', 'mktProFlg', 'mktProPct', 'multiplier', 'nOrdNo', 'noMktProFlg', 'odCrt', 'optTp', 'ordAutSt', 'ordDtTm', 'ordEntTm', 'ordGenTp', 'ordModNo', 'ordSrc', 'ordSt', 'ordValDt', 'prc', 'prcDen', 'prcNum', 'prcTp', 'precision', 'prod', 'qty', 'refLmtPrc', 'rejLongDesc', 'rejRsn', 'rejShortDesc', 'reqId', 'rmk', 'rptTp', 'series', 'sipInd', 'stat', 'stkPrc', 'strategyCode', 'sym', 'symOrdId', 'tckSz', 'tok', 'trdSym', 'trgPrc', 'trnsTp', 'uSec', 'unFldSz', 'updRecvTm', 'usrId', 'vendorCode', 'vldt')
+2026-10-03 12:44:42,592 - backend.kotak_client - WARNING - Kotak order book response summary: stat='Ok' stCode='200' envelope_keys=('data', 'stCode', 'stat') rows=8 row_keys=('GuiOrdId', 'actId', 'algCat', 'algId', 'algSeqNo', 'appInstlId', 'avgPrc', 'boeSec', 'brdLtQty', 'brkClnt', 'classification', 'cnlQty', 'coPct', 'defMktProV', 'dscQty', 'dscQtyPct', 'exCfmTm', 'exOrdId', 'exSeg', 'exUsrInfo', 'expDt', 'expDtSsb', 'fldQty', 'genDen', 'genNum', 'hsUpTm', 'it', 'locId', 'lotSz', 'mfdBy', 'minQty', 'mktPro', 'mktProFlg', 'mktProPct', 'multiplier', 'nOrdNo', 'noMktProFlg', 'odCrt', 'optTp', 'ordAutSt', 'ordDtTm', 'ordEntTm', 'ordGenTp', 'ordModNo', 'ordSrc', 'ordSt', 'ordValDt', 'prc', 'prcDen', 'prcNum', 'prcTp', 'precision', 'prod', 'qty', 'refLmtPrc', 'rejRsn', 'reqId', 'rmk', 'rptTp', 'series', 'sipInd', 'stat', 'stkPrc', 'strategyCode', 'sym', 'symOrdId', 'tckSz', 'tok', 'trdSym', 'trgPrc', 'trnsTp', 'uSec', 'unFldSz', 'updRecvTm', 'usrId', 'vendorCode', 'vldt')
+INFO:     connection closed
+INFO:     ('127.0.0.1', 55416) - "WebSocket /api/positions/stream?tokens=%5B%7B%22symbol%22%3A%22NIFTY26O0622400CE%22%2C%22exchange_segment%22%3A%22nse_fo%22%2C%22instrument_token%22%3A%2240687%22%7D%2C%7B%22symbol%22%3A%22ADANIENT-EQ%22%2C%22exchange_segment%22%3A%22nse_cm%22%2C%22instrument_token%22%3A%2225%22%7D%5D" [accepted]
+INFO:     connection open
+2026-10-03 12:45:04,806 - neo_api_client.websocket.feed.client - INFO - sfeed_connected {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:45:04,807 - neo_api_client.websocket.feed.client - INFO - sfeed_authenticated {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:45:05,162 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'scrips_lite', 'tokens': 2}
+2026-10-03 12:45:05,200 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:45:05,201 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+INFO:     connection closed
+INFO:     ('127.0.0.1', 64575) - "WebSocket /api/positions/stream?tokens=%5B%7B%22symbol%22%3A%22ADANIENT-EQ%22%2C%22exchange_segment%22%3A%22nse_cm%22%2C%22instrument_token%22%3A%2225%22%7D%2C%7B%22symbol%22%3A%22NIFTY26O0622400CE%22%2C%22exchange_segment%22%3A%22nse_fo%22%2C%22instrument_token%22%3A%2240687%22%7D%5D" [accepted]
+INFO:     connection open
+2026-10-03 12:45:09,983 - neo_api_client.websocket.feed.client - INFO - sfeed_connected {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:45:09,983 - neo_api_client.websocket.feed.client - INFO - sfeed_authenticated {'url': 'wss://sfeed.kotaksecurities.com/apifeed'}
+2026-10-03 12:45:10,377 - neo_api_client.websocket.feed.client - INFO - sfeed_subscribed {'intent': 'scrips_lite', 'tokens': 2}
+2026-10-03 12:45:10,413 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:45:10,413 - neo_api_client.websocket.feed.client - INFO - sfeed_message_received
+2026-10-03 12:45:21,020 - backend.kotak_client - WARNING - Kotak order book response summary: stat='Ok' stCode='200' envelope_keys=('data', 'stCode', 'stat') rows=8 row_keys=('GuiOrdId', 'actId', 'algCat', 'algId', 'algSeqNo', 'appInstlId', 'avgPrc', 'boeSec', 'brdLtQty', 'brkClnt', 'classification', 'cnlQty', 'coPct', 'defMktProV', 'dscQty', 'dscQtyPct', 'exCfmTm', 'exOrdId', 'exSeg', 'exUsrInfo', 'expDt', 'expDtSsb', 'fldQty', 'genDen', 'genNum', 'hsUpTm', 'it', 'locId', 'lotSz', 'mfdBy', 'minQty', 'mktPro', 'mktProFlg', 'mktProPct', 'multiplier', 'nOrdNo', 'noMktProFlg', 'odCrt', 'optTp', 'ordAutSt', 'ordDtTm', 'ordEntTm', 'ordGenTp', 'ordModNo', 'ordSrc', 'ordSt', 'ordValDt', 'prc', 'prcDen', 'prcNum', 'prcTp', 'precision', 'prod', 'qty', 'refLmtPrc', 'rejLongDesc', 'rejRsn', 'rejShortDesc', 'reqId', 'rmk', 'rptTp', 'series', 'sipInd', 'stat', 'stkPrc', 'strategyCode', 'sym', 'symOrdId', 'tckSz', 'tok', 'trdSym', 'trgPrc', 'trnsTp', 'uSec', 'unFldSz', 'updRecvTm', 'usrId', 'vendorCode', 'vldt')
+2026-10-03 12:45:24,235 - backend.kotak_client - WARNING - Kotak order book response summary: stat='Ok' stCode='200' envelope_keys=('data', 'stCode', 'stat') rows=8 row_keys=('GuiOrdId', 'actId', 'algCat', 'algId', 'algSeqNo', 'appInstlId', 'avgPrc', 'boeSec', 'brdLtQty', 'brkClnt', 'classification', 'cnlQty', 'coPct', 'defMktProV', 'dscQty', 'dscQtyPct', 'exCfmTm', 'exOrdId', 'exSeg', 'exUsrInfo', 'expDt', 'expDtSsb', 'fldQty', 'genDen', 'genNum', 'hsUpTm', 'it', 'locId', 'lotSz', 'mfdBy', 'minQty', 'mktPro', 'mktProFlg', 'mktProPct', 'multiplier', 'nOrdNo', 'noMktProFlg', 'odCrt', 'optTp', 'ordAutSt', 'ordDtTm', 'ordEntTm', 'ordGenTp', 'ordModNo', 'ordSrc', 'ordSt', 'ordValDt', 'prc', 'prcDen', 'prcNum', 'prcTp', 'precision', 'prod', 'qty', 'refLmtPrc', 'rejRsn', 'reqId', 'rmk', 'rptTp', 'series', 'sipInd', 'stat', 'stkPrc', 'strategyCode', 'sym', 'symOrdId', 'tckSz', 'tok', 'trdSym', 'trgPrc', 'trnsTp', 'uSec', 'unFldSz', 'updRecvTm', 'usrId', 'vendorCode', 'vldt')

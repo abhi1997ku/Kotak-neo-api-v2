@@ -5,6 +5,7 @@ import { apiClient, type WatchlistData, type WatchlistItem } from "../services/a
 
 interface WatchlistPanelProps {
   onSelectStock: (stock: WatchlistItem) => void;
+  onOrderRequest: (stock: WatchlistItem, side: "BUY" | "SELL") => void;
   onSelectIndex: (index: WatchlistItem) => void;
   selectedSymbol?: string;
   view?: "all" | "indices" | "stocks";
@@ -31,7 +32,7 @@ function changeColor(value: number | null | undefined) {
   return value > 0 ? "text-emerald-300" : "text-red-300";
 }
 
-export function WatchlistPanel({ onSelectStock, onSelectIndex, selectedSymbol, view = "all" }: WatchlistPanelProps) {
+export function WatchlistPanel({ onSelectStock, onOrderRequest, onSelectIndex, selectedSymbol, view = "all" }: WatchlistPanelProps) {
   const [filter, setFilter] = useState("");
   const [feedState, setFeedState] = useState("connecting");
   const [marketStatus, setMarketStatus] = useState("");
@@ -230,7 +231,7 @@ export function WatchlistPanel({ onSelectStock, onSelectIndex, selectedSymbol, v
       </div>
 
       <div className="max-h-[30rem] overflow-auto rounded-lg border border-slate-800">
-        <table className="w-full min-w-[620px] text-sm">
+        <table className="w-full min-w-[720px] text-sm">
           <thead className="sticky top-0 bg-slate-950 text-left text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th className="px-3 py-2.5">Symbol</th>
@@ -238,6 +239,7 @@ export function WatchlistPanel({ onSelectStock, onSelectIndex, selectedSymbol, v
               <th className="px-3 py-2.5 text-right">Live price</th>
               <th className="px-3 py-2.5 text-right">Change</th>
               <th className="px-3 py-2.5 text-right">%</th>
+              <th className="px-3 py-2.5 text-right">Trade</th>
             </tr>
           </thead>
           <tbody>
@@ -255,16 +257,22 @@ export function WatchlistPanel({ onSelectStock, onSelectIndex, selectedSymbol, v
                   <td className="px-3 py-2.5 text-right font-medium tabular-nums text-slate-100">{formatPrice(stock.ltp)}</td>
                   <td className={`px-3 py-2.5 text-right tabular-nums ${changeColor(stock.change)}`}>{formatChange(stock.change)}</td>
                   <td className={`px-3 py-2.5 text-right tabular-nums ${changeColor(stock.change_pct)}`}>{formatChange(stock.change_pct, "%")}</td>
+                  <td className="px-3 py-2.5 text-right">
+                    <div className="flex justify-end gap-1.5">
+                      <button type="button" onClick={(event) => { event.stopPropagation(); onOrderRequest(stock, "BUY"); }} className="rounded bg-emerald-700/80 px-2 py-1 text-[11px] font-semibold text-white hover:bg-emerald-600">Buy</button>
+                      <button type="button" onClick={(event) => { event.stopPropagation(); onOrderRequest(stock, "SELL"); }} className="rounded bg-red-700/80 px-2 py-1 text-[11px] font-semibold text-white hover:bg-red-600">Sell</button>
+                    </div>
+                  </td>
                 </tr>
               );
             })}
             {!isLoading && !error && visibleStocks.length === 0 && (
-              <tr><td colSpan={5} className="px-3 py-8 text-center text-sm text-slate-500">No matching Nifty 50 stocks.</td></tr>
+              <tr><td colSpan={6} className="px-3 py-8 text-center text-sm text-slate-500">No matching Nifty 50 stocks.</td></tr>
             )}
           </tbody>
         </table>
       </div>
-      <p className="mt-2 text-xs text-slate-500">Select a stock row to open its order panel. Prices update from Kotak's live feed during market hours.</p>
+      <p className="mt-2 text-xs text-slate-500">Buy or Sell opens a prefilled order ticket. Prices update from Kotak's live feed during market hours.</p>
       </>}
     </section>
   );

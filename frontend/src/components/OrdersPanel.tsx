@@ -1,6 +1,37 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient, type Order } from "../services/api";
+
+const orderTimestamp = (value: string): number | null => {
+  const text = value?.trim();
+  if (!text) return null;
+
+  // Parse day-first Kotak dates before Date.parse, which can treat numeric
+  // dates as month-first depending on the browser.
+  const parts = text.match(/^(\d{1,2})[-/ ]([A-Za-z]{3}|\d{1,2})[-/ ](\d{4})(?:[ T]+(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*(AM|PM))?)?(?:\s+[A-Za-z]{2,5})?$/i);
+  if (parts) {
+    const monthNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+    const monthPart = parts[2].toLowerCase();
+    const month = /^\d+$/.test(monthPart) ? Number(monthPart) - 1 : monthNames.indexOf(monthPart);
+    if (month >= 0 && month <= 11) {
+      let hour = Number(parts[4] || 0);
+      const meridiem = (parts[7] || "").toUpperCase();
+      if (meridiem === "PM" && hour < 12) hour += 12;
+      if (meridiem === "AM" && hour === 12) hour = 0;
+      return new Date(
+        Number(parts[3]),
+        month,
+        Number(parts[1]),
+        hour,
+        Number(parts[5] || 0),
+        Number(parts[6] || 0),
+      ).getTime();
+    }
+  }
+
+  const parsed = Date.parse(text);
+  return Number.isFinite(parsed) ? parsed : null;
+};
 
 export function OrdersPanel() {
   const queryClient = useQueryClient();
@@ -10,33 +41,75 @@ export function OrdersPanel() {
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState("");
   const [actionFailed, setActionFailed] = useState(false);
+  const [stableOrderIds, setStableOrderIds] = useState<string[]>([]);
   const { data, isLoading, error } = useQuery({
     queryKey: ["orders"],
     queryFn: () => apiClient.getOrderBook(),
-    refetchInterval: 3000,
+    // Keep the row and edit form stable while the user is changing an order.
+    // saveModification/cancel explicitly refresh the orderbook when the action completes.
+    refetchInterval: editingOrderId || busyOrderId ? false : 3000,
+    refetchOnWindowFocus: !editingOrderId && !busyOrderId,
+    refetchOnReconnect: !editingOrderId && !busyOrderId,
   });
+  const responseOrders = data?.orders || [];
+
+  useEffect(() => {
+    const incomingIds = (data?.orders || [])
+      .map((order) => order.order_id)
+      .filter((orderId): orderId is string => Boolean(orderId));
+
+    setStableOrderIds((currentIds) => {
+      const incomingIdSet = new Set(incomingIds);
+      const retainedIds = currentIds.filter((orderId) => incomingIdSet.has(orderId));
+      const seenIds = new Set(retainedIds);
+      const newIds = incomingIds.filter((orderId) => {
+        if (seenIds.has(orderId)) return false;
+        seenIds.add(orderId);
+        return true;
+      });
+      // New orders take the first slots; existing IDs keep their relative order.
+      const nextIds = [...newIds, ...retainedIds];
+      if (nextIds.length === currentIds.length && nextIds.every((id, index) => id === currentIds[index])) {
+        return currentIds;
+      }
+      return nextIds;
+    });
+  }, [data?.orders]);
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+      <div className="flex h-80 flex-col rounded-xl border border-slate-800 bg-slate-900 p-4">
         <h3 className="mb-3 text-sm uppercase tracking-wide text-slate-400">Order Book</h3>
-        <div className="text-center text-sm text-slate-500">Loading...</div>
+        <div className="flex flex-1 items-center justify-center text-center text-sm text-slate-500">Loading...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+      <div className="flex h-80 flex-col rounded-xl border border-slate-800 bg-slate-900 p-4">
         <h3 className="mb-3 text-sm uppercase tracking-wide text-slate-400">Order Book</h3>
-        <div className="rounded bg-red-500/10 p-2 text-xs text-red-300">
+        <div className="flex flex-1 items-center rounded bg-red-500/10 p-2 text-xs text-red-300">
           {error instanceof Error ? error.message : "Error loading orders"}
         </div>
       </div>
     );
   }
 
-  const orders = data?.orders || [];
+  const stableIndex = new Map<string, number>(
+    stableOrderIds.map((orderId, index): [string, number] => [orderId, index]),
+  );
+  const orders = [...responseOrders].sort((left, right) => {
+    const leftTime = orderTimestamp(left.timestamp);
+    const rightTime = orderTimestamp(right.timestamp);
+    if (leftTime !== null && rightTime !== null && leftTime !== rightTime) return rightTime - leftTime;
+    if (leftTime !== null && rightTime === null) return -1;
+    if (leftTime === null && rightTime !== null) return 1;
+
+    const leftIndex = stableIndex.get(left.order_id) ?? Number.MAX_SAFE_INTEGER;
+    const rightIndex = stableIndex.get(right.order_id) ?? Number.MAX_SAFE_INTEGER;
+    return leftIndex - rightIndex || left.order_id.localeCompare(right.order_id);
+  });
 
   const statusColor = (status: string) => {
     switch (status?.toUpperCase()) {
@@ -142,19 +215,19 @@ export function OrdersPanel() {
   };
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
-      <h3 className="mb-3 text-sm uppercase tracking-wide text-slate-400">Order Book</h3>
+    <div className="flex h-80 flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-900 p-4">
+      <h3 className="mb-3 shrink-0 text-sm uppercase tracking-wide text-slate-400">Order Book</h3>
       {actionMessage && (
-        <p className={"mb-3 rounded px-3 py-2 text-xs " + (actionFailed ? "bg-red-500/10 text-red-300" : "bg-sky-500/10 text-sky-200")}>
+        <p className={"mb-3 shrink-0 rounded px-3 py-2 text-xs " + (actionFailed ? "bg-red-500/10 text-red-300" : "bg-sky-500/10 text-sky-200")}>
           {actionMessage}
         </p>
       )}
       {orders.length === 0 ? (
-        <div className="text-center text-sm text-slate-500">
+        <div className="flex min-h-0 flex-1 items-center justify-center text-center text-sm text-slate-500">
           {data?.message || "Kotak returned no orders for the current order book."}
         </div>
       ) : (
-        <div className="max-h-64 space-y-2 overflow-y-auto">
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
           {orders.map((order: Order) => {
             const knownStatus = Boolean(order.status) && !["UNKNOWN", "NONE"].includes(order.status.trim().toUpperCase());
             const canManage = Boolean(order.order_id) && knownStatus && !isTerminal(order.status);
@@ -168,6 +241,12 @@ export function OrdersPanel() {
                     <p className="text-slate-400">
                       {order.side === "BUY" ? "Buy" : "Sell"} {order.qty} @ ₹{Number(order.price || 0).toFixed(2)}
                       {order.order_type ? " · " + order.order_type : ""}
+                    </p>
+                    <p className="text-slate-400">
+                      {order.filled_qty == null
+                        ? "Filled quantity not reported"
+                        : `Filled ${order.filled_qty} / ${order.qty}`}
+                      {order.unfilled_qty == null ? "" : ` · Remaining ${order.unfilled_qty}`}
                     </p>
                     <p className="mt-1 text-[10px] text-slate-500">Order ID: {order.order_id}</p>
                   </div>

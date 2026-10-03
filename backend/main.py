@@ -7,6 +7,7 @@ from backend.routes.orders import router as orders_router
 from backend.routes.positions import router as positions_router
 from backend.routes.watchlist import router as watchlist_router
 from backend.routes.screener import router as screener_router
+from backend.routes.paper_trading import router as paper_trading_router
 
 app = FastAPI(title="Kotak Neo Personal Trading Terminal", version="0.1.0")
 
@@ -29,6 +30,7 @@ app.include_router(orders_router, prefix="/api")
 app.include_router(positions_router, prefix="/api")
 app.include_router(watchlist_router, prefix="/api")
 app.include_router(screener_router, prefix="/api")
+app.include_router(paper_trading_router, prefix="/api")
 
 
 @app.get("/health")

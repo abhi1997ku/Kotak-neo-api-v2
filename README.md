@@ -1,6 +1,6 @@
 # Kotak Neo Personal Trading Terminal
 
-A local React + FastAPI trading dashboard for a single Kotak Neo account. It includes watchlists and live quotes, option chains, positions, holdings, orders, and a swing-trade screener. The repository also contains the Kotak Neo Python SDK and its endpoint references under [docs](docs/).
+A local React + FastAPI trading dashboard for a single Kotak Neo account. It includes watchlists and live quotes, option chains, positions, a Holdings panel in the left sidebar with a sell workflow, an order book, and a swing-trade screener. Buy, sell, and position-exit actions use an order ticket popup. The repository also contains the Kotak Neo Python SDK and its endpoint references under [docs](docs/).
 
 ## Requirements
 

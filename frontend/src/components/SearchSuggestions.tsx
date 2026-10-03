@@ -2,19 +2,23 @@ import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { apiClient } from "../services/api";
 
-interface SearchResult {
+export interface SearchInstrument {
   symbol: string;
   name: string;
   exchange: string;
+  trading_symbol?: string;
+  exchange_segment?: string;
+  instrument_token?: string;
 }
 
 interface SearchSuggestionsProps {
-  onSelectSymbol: (symbol: SearchResult) => void;
+  onSelectSymbol: (symbol: SearchInstrument) => void;
+  onOrderRequest: (symbol: SearchInstrument, side: "BUY" | "SELL") => void;
 }
 
-export function SearchSuggestions({ onSelectSymbol }: SearchSuggestionsProps) {
+export function SearchSuggestions({ onSelectSymbol, onOrderRequest }: SearchSuggestionsProps) {
   const [query, setQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
+  const [suggestions, setSuggestions] = useState<SearchInstrument[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -43,8 +47,15 @@ export function SearchSuggestions({ onSelectSymbol }: SearchSuggestionsProps) {
     return () => clearTimeout(timer);
   }, [query]);
 
-  const handleSelectSymbol = (symbol: SearchResult) => {
+  const handleSelectSymbol = (symbol: SearchInstrument) => {
     onSelectSymbol(symbol);
+    setQuery("");
+    setSuggestions([]);
+    setIsOpen(false);
+  };
+
+  const handleOrderRequest = (symbol: SearchInstrument, side: "BUY" | "SELL") => {
+    onOrderRequest(symbol, side);
     setQuery("");
     setSuggestions([]);
     setIsOpen(false);
@@ -74,14 +85,14 @@ export function SearchSuggestions({ onSelectSymbol }: SearchSuggestionsProps) {
           ) : (
             <div className="divide-y divide-slate-700">
               {suggestions.map((symbol) => (
-                <button
-                  key={`${symbol.exchange}-${symbol.symbol}`}
-                  onClick={() => handleSelectSymbol(symbol)}
-                  className="w-full text-left px-3 py-2 hover:bg-slate-700 transition-colors"
-                >
-                  <div className="font-semibold text-slate-100">{symbol.symbol}</div>
-                  <div className="text-xs text-slate-400">{symbol.name}</div>
-                </button>
+                <div key={`${symbol.exchange}-${symbol.symbol}`} className="flex items-center gap-2 px-2 py-2 hover:bg-slate-700/70">
+                  <button onClick={() => handleSelectSymbol(symbol)} className="min-w-0 flex-1 text-left">
+                    <div className="truncate font-semibold text-slate-100">{symbol.symbol}</div>
+                    <div className="truncate text-xs text-slate-400">{symbol.name}</div>
+                  </button>
+                  <button type="button" onClick={() => handleOrderRequest(symbol, "BUY")} className="rounded bg-emerald-700/80 px-2 py-1 text-[10px] font-semibold text-white hover:bg-emerald-600">Buy</button>
+                  <button type="button" onClick={() => handleOrderRequest(symbol, "SELL")} className="rounded bg-red-700/80 px-2 py-1 text-[10px] font-semibold text-white hover:bg-red-600">Sell</button>
+                </div>
               ))}
             </div>
           )}

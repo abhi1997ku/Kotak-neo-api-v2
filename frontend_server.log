@@ -3,8 +3,16 @@
 > vite --host 0.0.0.0 --port 5173
 
 
-  [32m[1mVITE[22m v5.4.21[39m  [2mready in [0m[1m321[22m[2m[0m ms[22m
+  VITE v5.4.21  ready in 348 ms
 
-  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
-  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.29.109:[1m5173[22m/[39m
-[2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: http://192.168.29.109:5173/
+12:39:44 PM [vite] hmr update /src/index.css, /src/contexts/AuthContext.tsx, /src/components/HoldingsPanel.tsx, /src/components/MarginPanel.tsx, /src/components/SearchSuggestions.tsx, /src/components/ScreenerPanel.tsx, /src/components/OrderTicketModal.tsx, /src/components/PositionsPanel.tsx, /src/components/PaperTradingPanel.tsx, /src/components/OrdersPanel.tsx, /src/components/WatchlistPanel.tsx, /src/components/OptionChainPanel.tsx
+12:39:44 PM [vite] hmr update /src/components/OrderTicketModal.tsx, /src/index.css
+12:39:44 PM [vite] hmr invalidate /src/contexts/AuthContext.tsx Could not Fast Refresh ("useAuth" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+12:39:44 PM [vite] hmr update /src/App.tsx, /src/index.css, /src/components/LoginForm.tsx, /src/components/Dashboard.tsx
+12:41:08 PM [vite] hmr update /src/components/Dashboard.tsx, /src/index.css
+12:41:15 PM [vite] hmr update /src/components/HoldingsPanel.tsx, /src/index.css
+12:41:36 PM [vite] hmr update /src/components/HoldingsPanel.tsx
+12:42:28 PM [vite] hmr update /src/components/OrderTicketModal.tsx, /src/index.css
+12:43:04 PM [vite] hmr update /src/components/HoldingsPanel.tsx, /src/index.css

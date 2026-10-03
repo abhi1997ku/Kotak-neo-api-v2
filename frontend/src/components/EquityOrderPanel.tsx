@@ -63,8 +63,12 @@ export function EquityOrderPanel({ symbol, tradingSymbol, name, instrumentToken 
         validity: "DAY",
         tag: `equity-${side.toLowerCase()}`,
       });
-      await queryClient.invalidateQueries({ queryKey: ["orders"] });
-      await queryClient.refetchQueries({ queryKey: ["orders"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["orders"] }),
+        queryClient.invalidateQueries({ queryKey: ["positions"] }),
+        queryClient.invalidateQueries({ queryKey: ["holdings"] }),
+        queryClient.invalidateQueries({ queryKey: ["trade-book"] }),
+      ]);
       setMessage(`Order ${result.status || "submitted"}${result.order_id ? `: ${result.order_id}` : ". Check Order Book."}`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Order submission failed.";

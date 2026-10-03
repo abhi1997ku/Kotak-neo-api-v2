@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from neo_api_client import NeoAPI
 from neo_api_client.api.scrip_master_api import ScripMasterAPI
 from neo_api_client.urls import SFEED_WEBSOCKET_URL
-from neo_api_client.websocket.feed import SFeedIndex, SFeedMarketStatus, SFeedScripLite, SFeedWebSocket, WsToken
+from neo_api_client.websocket.feed import SFeedIndex, SFeedMarketStatus, SFeedScrip, SFeedScripLite, SFeedWebSocket, WsToken
 from backend.watchlist_catalog import (
     constituents_source,
     get_nifty50_constituents,
@@ -64,6 +64,12 @@ def _optional_number(value: Any) -> float | None:
 
 def _integer(value: Any, default: int = 0) -> int:
     return int(_number(value, default))
+
+
+def _optional_integer(value: Any) -> int | None:
+    if value in (None, ""):
+        return None
+    return _integer(value)
 
 
 def _quote_value(record: dict[str, Any], *names: str, default: Any = "") -> Any:
@@ -677,6 +683,132 @@ class KotakClient:
                         "updated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
                     }
 
+    async def position_tick_stream(
+        self, tokens: list[dict[str, str]]
+    ) -> AsyncIterator[dict[str, Any]]:
+        """Yield initial and streaming LTP updates for open position instruments."""
+        self.ensure_logged_in()
+        configuration = self.client.configuration
+        access_token = getattr(configuration, "edit_token", None) or self.session.trade_token
+        sid = getattr(configuration, "edit_sid", None) or self.session.edit_sid
+        if not self.config.get("ucc") or not access_token or not sid:
+            raise KotakClientError("Kotak session is missing credentials required by the live market feed.")
+
+        ws_tokens = [
+            WsToken(token["exchange_segment"], token["instrument_token"])
+            for token in tokens
+        ]
+        symbol_by_token = {
+            (token["exchange_segment"], token["instrument_token"]): token["symbol"]
+            for token in tokens
+        }
+        if not ws_tokens:
+            raise KotakClientError("No open-position instrument tokens were provided for the live price feed.")
+
+        feed = SFeedWebSocket(
+            access_token=access_token,
+            sid=sid,
+            ucc=self.config["ucc"],
+            url=self.session.feed_url or SFEED_WEBSOCKET_URL,
+        )
+        async with feed:
+            yield {"type": "status", "state": "connected"}
+
+            tokens_by_segment: dict[str, list[str]] = {}
+            for token in tokens:
+                tokens_by_segment.setdefault(token["exchange_segment"], []).append(token["instrument_token"])
+            for segment, instrument_tokens in tokens_by_segment.items():
+                try:
+                    snapshot = await asyncio.to_thread(
+                        self.get_quotes,
+                        instrument_tokens,
+                        segment,
+                        "ltp",
+                    )
+                except KotakClientError as exc:
+                    logger.warning("Position LTP snapshot unavailable for %s: %s", segment, str(exc)[:180])
+                    continue
+                for quote in snapshot.get("quotes", []):
+                    key = (segment, str(quote.get("instrument_token", "")))
+                    symbol = symbol_by_token.get(key)
+                    if symbol and quote.get("ltp", 0) > 0:
+                        yield {
+                            "type": "quote",
+                            "source": "snapshot",
+                            "symbol": symbol,
+                            "instrument_token": key[1],
+                            "exchange_segment": segment,
+                            "ltp": quote["ltp"],
+                            "updated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+                        }
+
+            await feed.subscribe_scrips_lite(ws_tokens)
+            async for message in feed:
+                if isinstance(message, SFeedScripLite):
+                    key = (str(message.exchange_segment).lower(), str(message.instrument_token))
+                    symbol = symbol_by_token.get(key)
+                    if symbol:
+                        yield {
+                            "type": "quote",
+                            "source": "stream",
+                            "symbol": symbol,
+                            "instrument_token": message.instrument_token,
+                            "exchange_segment": message.exchange_segment,
+                            "ltp": message.last_traded_price,
+                            "change": message.net_change,
+                            "change_pct": message.net_change_percent,
+                            "updated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+                        }
+
+    def _nearest_banknifty_future(self) -> dict[str, Any]:
+        """Resolve the current BANKNIFTY index future from Kotak's live master."""
+        today = datetime.now().date()
+        candidates: list[tuple[datetime, dict[str, Any]]] = []
+        for row in self._load_scrip_master("nse_fo"):
+            name = str(row.get("pSymbolName") or row.get("symbol") or "").upper().replace(" ", "")
+            instrument_type = str(row.get("pInstType") or row.get("instrument_type") or "").upper()
+            expiry = _expiry_date(row.get("pExpiryDate") or row.get("expiry"))
+            token = str(row.get("pSymbol") or row.get("instrument_token") or "").strip()
+            if name == "BANKNIFTY" and instrument_type.startswith("FUT") and token and expiry and expiry.date() >= today:
+                candidates.append((expiry, row))
+        if not candidates:
+            raise KotakClientError("Could not resolve a current BANKNIFTY futures contract from Kotak's instrument master.")
+        return min(candidates, key=lambda item: item[0])[1]
+
+    async def banknifty_future_tick_stream(self) -> AsyncIterator[dict[str, Any]]:
+        """Yield full live ticks for the nearest BANKNIFTY future, including volume."""
+        self.ensure_logged_in()
+        configuration = self.client.configuration
+        access_token = getattr(configuration, "edit_token", None) or self.session.trade_token
+        sid = getattr(configuration, "edit_sid", None) or self.session.edit_sid
+        if not self.config.get("ucc") or not access_token or not sid:
+            raise KotakClientError("Kotak session is missing credentials required by the live market feed.")
+
+        contract = await asyncio.to_thread(self._nearest_banknifty_future)
+        token = str(contract.get("pSymbol") or contract.get("instrument_token"))
+        trading_symbol = str(contract.get("pTrdSymbol") or contract.get("trading_symbol") or token)
+        lot_size = _integer(contract.get("lLotSize") or contract.get("lot_size"), 1)
+        feed = SFeedWebSocket(
+            access_token=access_token,
+            sid=sid,
+            ucc=self.config["ucc"],
+            url=self.session.feed_url or SFEED_WEBSOCKET_URL,
+        )
+        async with feed:
+            await feed.subscribe_scrips([WsToken("nse_fo", token)])
+            yield {"type": "status", "state": "connected", "symbol": trading_symbol, "instrument_token": token, "lot_size": lot_size}
+            async for message in feed:
+                if isinstance(message, SFeedScrip) and message.instrument_token == token:
+                    yield {
+                        "type": "quote",
+                        "symbol": trading_symbol,
+                        "instrument_token": token,
+                        "ltp": message.last_traded_price,
+                        "volume": message.volume_traded_today,
+                        "last_trade_time": message.last_trade_time,
+                        "updated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+                    }
+
     def quote_by_instrument_tokens(self, instrument_tokens: List[Dict[str, Any]], quote_type: str = "ltp") -> Dict[str, Any]:
         self.ensure_logged_in()
         return self.client.quotes(instrument_tokens=instrument_tokens, quote_type=quote_type)
@@ -840,18 +972,168 @@ class KotakClient:
             else:
                 return {"positions": []}
             
-            positions = []
+            # Neo's current positions endpoint can return fill-shaped rows
+            # (sym/trdSym, trnsTp, fldQty) rather than a pre-aggregated net
+            # position. Combine those fills so executed quantities are visible
+            # in the terminal's Positions panel.
+            positions_by_symbol: dict[str, dict[str, Any]] = {}
             for p in raw_positions:
-                position = {
-                    "symbol": _first_value(p, "displaySymbol", "tradingSymbol", "pTrdSymbol", "symbol", "scripName", "commonScripCode"),
-                    "qty": _integer(_first_value(p, "netQty", "netQuantity", "quantity", "buyQty", "sellQty")),
-                    "avg_price": _number(_first_value(p, "avgPrice", "averagePrice", "buyAvgPrice", "sellAvgPrice")),
-                    "current_price": _number(_first_value(p, "lastRate", "ltp", "lastPrice", "closingPrice")),
-                    "pnl": _number(_first_value(p, "mtom", "pnl", "unrealisedGainLoss", "unrealizedGainLoss")),
-                    "pnl_pct": _number(_first_value(p, "mtomPct", "pnlPct", "pnlPercentage")),
-                }
-                positions.append(position)
-            
+                symbol = str(_first_value(
+                    p,
+                    "displaySymbol",
+                    "tradingSymbol",
+                    "pTrdSymbol",
+                    "trdSym",
+                    "sym",
+                    "symbol",
+                    "scripName",
+                    "commonScripCode",
+                    default="",
+                )).strip()
+                if not symbol:
+                    continue
+
+                component_fields = ("cfBuyQty", "flBuyQty", "cfSellQty", "flSellQty")
+                if any(field in p and p[field] not in (None, "") for field in component_fields):
+                    qty = (
+                        _integer(p.get("cfBuyQty"))
+                        + _integer(p.get("flBuyQty"))
+                        - _integer(p.get("cfSellQty"))
+                        - _integer(p.get("flSellQty"))
+                    )
+                    order_qty = qty
+                    lot_size = _number(_first_value(p, "lotSz", "lotSize", default=1), 1)
+                    exchange_segment = str(_first_value(p, "exSeg", "exchangeSegment", default="")).lower()
+                    if exchange_segment.endswith("_fo") and lot_size > 1:
+                        qty = int(qty / lot_size)
+                else:
+                    net_qty = _first_value(p, "netQty", "netQuantity", "netPosition", "net_position", default=None)
+                    if net_qty is not None:
+                        qty = _integer(net_qty)
+                    else:
+                        raw_qty = _first_value(p, "qty", "quantity", "buyQty", "sellQty", default=None)
+                        qty = _integer(raw_qty) if raw_qty is not None else 0
+                        fill_qty = _first_value(p, "fldQty", "filledQty", "filledQuantity", "tradeQty", default=None)
+                        # Kotak fill rows often contain qty=0 alongside fldQty.
+                        if fill_qty is not None and (raw_qty is None or qty == 0):
+                            fill_qty = _integer(fill_qty)
+                            side = str(_first_value(p, "trnsTp", "transactionType", "side", default="B")).upper()
+                            qty = -fill_qty if side in {"S", "SELL"} else fill_qty
+                    order_qty = qty
+
+                if qty == 0:
+                    continue
+
+                position = positions_by_symbol.setdefault(
+                    symbol,
+                    {
+                        "symbol": symbol,
+                        "exchange_segment": str(_first_value(p, "exSeg", "exchange_segment", "exchangeSegment", default="nse_cm")).lower(),
+                        "instrument_token": str(_first_value(p, "tok", "pSymbol", "instrument_token", "instrumentToken", default="")).split("|")[-1],
+                        "product": str(_first_value(p, "product", "prod", "pCode", "productCode", "prd", default="")).strip().upper(),
+                        "qty": 0,
+                        "order_quantity": 0,
+                        "buy_qty": 0,
+                        "buy_value": 0.0,
+                        "sell_qty": 0,
+                        "sell_value": 0.0,
+                        "current_price": 0.0,
+                        "pnl": 0.0,
+                        "pnl_pct": 0.0,
+                    },
+                )
+                if not position["instrument_token"]:
+                    position["instrument_token"] = str(_first_value(
+                        p,
+                        "tok",
+                        "pSymbol",
+                        "instrument_token",
+                        "instrumentToken",
+                        default="",
+                    )).split("|")[-1]
+                if not position["product"]:
+                    position["product"] = str(_first_value(
+                        p, "product", "prod", "pCode", "productCode", "prd", default=""
+                    )).strip().upper()
+                avg_price = _number(_first_value(
+                    p,
+                    "avgPrc",
+                    "avgPrice",
+                    "averagePrice",
+                    "buyAvgPrice",
+                    "sellAvgPrice",
+                ))
+                if qty > 0:
+                    position["buy_qty"] += qty
+                    position["buy_value"] += qty * avg_price
+                else:
+                    position["sell_qty"] += abs(qty)
+                    position["sell_value"] += abs(qty) * avg_price
+                position["qty"] += qty
+                position["order_quantity"] += order_qty
+                position["current_price"] = position["current_price"] or _number(
+                    _first_value(p, "lastRate", "ltp", "lastPrice", "closingPrice")
+                )
+                position["pnl"] += _number(
+                    _first_value(p, "mtom", "pnl", "unrealisedGainLoss", "unrealizedGainLoss")
+                )
+                position["pnl_pct"] = _number(
+                    _first_value(p, "mtomPct", "pnlPct", "pnlPercentage"),
+                    position["pnl_pct"],
+                )
+
+            missing_by_segment: dict[str, list[dict[str, Any]]] = {}
+            for position in positions_by_symbol.values():
+                if position["qty"] and not position["instrument_token"]:
+                    segment = position["exchange_segment"]
+                    if segment in {"nse_cm", "bse_cm", "nse_fo", "bse_fo"}:
+                        missing_by_segment.setdefault(segment, []).append(position)
+
+            for segment, missing_positions in missing_by_segment.items():
+                try:
+                    master_rows = self._load_scrip_master(segment)
+                except KotakClientError as exc:
+                    logger.warning("Could not resolve position tokens for %s: %s", segment, str(exc)[:180])
+                    continue
+                for position in missing_positions:
+                    symbol_key = position["symbol"].upper()
+                    match = next((row for row in master_rows if str(_first_value(
+                        row, "pTrdSymbol", "trading_symbol", "trdSym", "symbol", default=""
+                    )).upper() == symbol_key), None)
+                    if not match and symbol_key.endswith("-EQ"):
+                        base_symbol = symbol_key[:-3]
+                        match = next((row for row in master_rows if
+                            str(_first_value(row, "pSymbolName", "symbol_name", "symbol", default="")).upper() == base_symbol
+                            and str(_first_value(row, "pGroup", "series", "pSeries", default="EQ")).upper() in {"EQ", "BL"}
+                        ), None)
+                    if match:
+                        position["instrument_token"] = str(_first_value(
+                            match, "pSymbol", "instrument_token", "token", default=""
+                        )).split("|")[-1]
+
+            positions = []
+            for position in positions_by_symbol.values():
+                if position["qty"] == 0:
+                    continue
+                if position["qty"] > 0 and position["buy_qty"]:
+                    position["avg_price"] = position["buy_value"] / position["buy_qty"]
+                elif position["qty"] < 0 and position["sell_qty"]:
+                    position["avg_price"] = position["sell_value"] / position["sell_qty"]
+                else:
+                    position["avg_price"] = 0.0
+                positions.append({
+                    "symbol": position["symbol"],
+                    "qty": position["qty"],
+                    "order_quantity": position["order_quantity"],
+                    "avg_price": position["avg_price"],
+                    "current_price": position["current_price"],
+                    "pnl": position["pnl"],
+                    "pnl_pct": position["pnl_pct"],
+                    "exchange_segment": position["exchange_segment"],
+                    "instrument_token": position["instrument_token"],
+                    "product": position["product"],
+                })
+
             return {"positions": positions}
         except Exception as exc:
             raise KotakClientError(f"Positions fetch failed: {exc}") from exc
@@ -886,41 +1168,102 @@ class KotakClient:
             raise KotakClientError(f"Holdings fetch failed: {exc}") from exc
 
     def get_margin_and_funds(self) -> Dict[str, Any]:
-        """Fetch funds, margin available, and utilization metrics."""
+        """Return available funds and margin values from Kotak's RMS limits."""
         self.ensure_logged_in()
         try:
             result = self.client.limits(segment="ALL", exchange="ALL", product="ALL")
-            
-            # Normalize broker response to frontend format
-            if isinstance(result, dict):
-                limit_record = _records(result)[0] if _records(result) else result
-                net = _number(_first_value(limit_record, "Net", "net", "available", "availableCash", "AvailableCash", "availableMargin", "AvailableMargin"))
-                collateral = _number(_first_value(limit_record, "Collateral", "collateral", "collateralAmount"))
-                margin_used = _number(_first_value(limit_record, "MarginUsed", "marginUsed", "utilised", "Utilised", "utilized", "Utilized"))
-                collateral_value = _number(_first_value(limit_record, "CollateralValue", "collateralValue"))
-                
-                # Calculate available = Net + unused collateral
-                available = net + (collateral_value - collateral) if collateral_value > collateral else net
-                
-                # gross = total available margin (collateral + cash)
-                gross = _number(_first_value(limit_record, "gross", "Gross"), net + collateral)
-                
-                # pnl = 0 for now (can be calculated from holdings separately)
-                pnl = 0.0
-                
-                return {
-                    "available": available,
-                    "utilised": margin_used,
-                    "gross": gross,
-                    "pnl": pnl,
-                }
-            
+            if not isinstance(result, (dict, list)):
+                raise KotakClientError("Kotak returned an invalid limits response.")
+
+            records = _records(result)
+            if not records:
+                raise KotakClientError("Kotak returned no account limits.")
+            limit_record = records[0]
+
+            for response_record in (result, limit_record):
+                if not isinstance(response_record, dict):
+                    continue
+                error = _first_value(
+                    response_record,
+                    "Error Message",
+                    "Error",
+                    "error",
+                    "emsg",
+                    "errMsg",
+                    default=None,
+                )
+                if error:
+                    raise KotakClientError(f"Kotak limits request failed: {error}")
+
+                status = str(
+                    _first_value(response_record, "stat", "status", default="")
+                ).strip().lower()
+                if status and status not in {"ok", "success", "200"}:
+                    raise KotakClientError(f"Kotak limits request returned status: {status}")
+
+            # Kotak's v2 Limits response reports the remaining margin as Net.
+            available_raw = _first_value(
+                limit_record,
+                "Net",
+                "net",
+                "AvailableMargin",
+                "availableMargin",
+                "available",
+                "availableCash",
+                "AvailableCash",
+                default=None,
+            )
+            available = _optional_number(available_raw)
+            if available is None:
+                raise KotakClientError("Kotak limits response did not include a valid available-margin value.")
+
+            margin_used_raw = _first_value(
+                limit_record,
+                "MarginUsed",
+                "MarginUsedPrsnt",
+                "marginUsed",
+                "AmountUtilizedPrsnt",
+                "AmtUntilizedPrsnt",
+                "utilised",
+                "Utilised",
+                "utilized",
+                "Utilized",
+                default=None,
+            )
+            margin_used = _optional_number(margin_used_raw)
+            if margin_used is None:
+                raise KotakClientError("Kotak limits response did not include a valid MarginUsed value.")
+
+            gross_raw = _first_value(
+                limit_record,
+                "GrossMarginAvailable",
+                "grossMarginAvailable",
+                "gross",
+                "Gross",
+                "CollateralValue",
+                "collateralValue",
+                default=None,
+            )
+            gross = _optional_number(gross_raw)
+            if gross is None:
+                # If Kotak omits a gross field, restore the utilized amount to Net.
+                gross = available + margin_used
+
+            realized_pnl = _optional_number(
+                _first_value(limit_record, "RealizedMtomPrsnt", "realizedMtom", default=None)
+            ) or 0.0
+            unrealized_pnl = _optional_number(
+                _first_value(limit_record, "UnrealizedMtomPrsnt", "unrealizedMtom", default=None)
+            ) or 0.0
+
             return {
-                "available": 0,
-                "utilised": 0,
-                "gross": 0,
-                "pnl": 0,
+                "available": available,
+                "utilised": margin_used,
+                "gross": gross,
+                "pnl": realized_pnl + unrealized_pnl,
             }
+        except KotakClientError:
+            raise
         except Exception as exc:
             raise KotakClientError(f"Margin fetch failed: {exc}") from exc
 
@@ -1286,6 +1629,8 @@ class KotakClient:
                     "symbol": _first_value(o, "displaySymbol", "tradingSymbol", "pTrdSymbol", "trdSym", "symbol", "sym", "scripName", "scripCode"),
                     "side": str(_first_value(o, "transactionType", "transaction_type", "trnsTp", "side")).upper(),
                     "qty": _integer(_first_value(o, "quantity", "orderQuantity", "qty", "ordQty", "totalQuantity")),
+                    "filled_qty": _optional_integer(_first_value(o, "fldQty", "filledQty", "filledQuantity", "filled_qty", default=None)),
+                    "unfilled_qty": _optional_integer(_first_value(o, "unFldSz", "unfilledQty", "unfilledQuantity", "unfilled_qty", default=None)),
                     "price": _number(_first_value(o, "orderPrice", "price", "prc", "averagePrice", "avgPrice")),
                     "order_type": str(_first_value(o, "orderType", "order_type", "ordTyp", "prcTp", "pt", default="L")).upper(),
                     "validity": validity,
@@ -1323,14 +1668,23 @@ class KotakClient:
             
             trades = []
             for t in raw_trades:
+                trade_time = _first_value(t, "tradeTime", "tradeDateTime", "timestamp", "exTm", default="")
+                if not trade_time:
+                    trade_date = _first_value(t, "flDt", default="")
+                    fill_time = _first_value(t, "flTm", default="")
+                    trade_time = f"{trade_date} {fill_time}".strip()
                 trade = {
-                    "trade_id": str(t.get("tradeId", t.get("trade_id", ""))),
-                    "symbol": t.get("displaySymbol") or t.get("symbol") or t.get("scripCode", ""),
-                    "side": t.get("transactionType", t.get("side", "")).upper(),
-                    "qty": int(t.get("tradeQty", t.get("quantity", t.get("qty", 0)))),
-                    "price": float(t.get("tradePrice", t.get("price", 0))),
-                    "timestamp": str(t.get("tradeTime", t.get("timestamp", ""))),
+                    "trade_id": str(_first_value(t, "tradeId", "trade_id", "flId", "nOrdNo", default="")),
+                    "symbol": _first_value(t, "displaySymbol", "tradingSymbol", "pTrdSymbol", "trdSym", "sym", "symbol", "scripCode", default=""),
+                    "side": str(_first_value(t, "transactionType", "trnsTp", "side", default="")).upper(),
+                    "qty": _integer(_first_value(t, "tradeQty", "trdQty", "fldQty", "quantity", "qty")),
+                    "price": _number(_first_value(t, "tradePrice", "avgPrc", "averagePrice", "price", "prc")),
+                    "timestamp": str(trade_time),
                 }
+                if trade["side"] == "B":
+                    trade["side"] = "BUY"
+                elif trade["side"] == "S":
+                    trade["side"] = "SELL"
                 trades.append(trade)
             
             return {"trades": trades}
