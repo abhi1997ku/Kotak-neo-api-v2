@@ -8,7 +8,9 @@ import csv
 import io
 import asyncio
 import uuid
-from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+from datetime import datetime, timedelta, time as clock_time
+from zoneinfo import ZoneInfo
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, AsyncIterator, Dict, List, Optional
@@ -26,15 +28,40 @@ from neo_api_client.websocket.feed import SFeedIndex, SFeedMarketStatus, SFeedSc
 from backend.watchlist_catalog import (
     constituents_source,
     get_nifty50_constituents,
+    match_constituent_tokens,
     match_index_tokens,
     match_nifty50_tokens,
 )
 
 logger = logging.getLogger(__name__)
 
+KOTAK_NSE_FO_EXPIRY_OFFSET_SECONDS = 315_511_200
+
 
 class KotakClientError(RuntimeError):
     """Raised when the Kotak client cannot complete a broker request."""
+
+
+class KotakSessionExpired(KotakClientError):
+    """Raised only when Kotak explicitly rejects the current session."""
+
+
+def _exception_summary(exc: Exception) -> str:
+    """Format SDK errors safely; the bundled ApiException.__str__ returns None."""
+    details = []
+    for name in ("status", "reason", "body"):
+        value = getattr(exc, name, None)
+        if value not in (None, "", 0):
+            details.append(f"{name}={str(value)[:300]}")
+    try:
+        message = str(exc)
+    except Exception:
+        message = ""
+    if message and "__str__ returned non-string" not in message:
+        details.insert(0, message[:300])
+    if not details and getattr(exc, "args", None):
+        details.append(f"args={repr(exc.args)[:300]}")
+    return f"{type(exc).__name__}: " + "; ".join(details) if details else type(exc).__name__
 
 
 def _first_value(record: dict[str, Any], *names: str, default: Any = "") -> Any:
@@ -128,21 +155,76 @@ def _records(payload: Any) -> list[dict[str, Any]]:
 
 
 def _expiry_date(value: Any) -> datetime | None:
-    if isinstance(value, (int, float)) and value > 0:
-        timestamp = float(value)
-        if timestamp > 10_000_000_000:
-            timestamp /= 1000
+    text = str(value or "").strip()
+    # Some Kotak master versions expose YYYYMMDD while CSV masters commonly
+    # encode Unix seconds. Check the compact date before interpreting digits as
+    # an epoch, and accept both numeric API values and their CSV string form.
+    compact_date = text.split(".", 1)[0]
+    if len(compact_date) == 8 and compact_date.isdigit() and compact_date[:2] in {"19", "20", "21"}:
         try:
+            return datetime.strptime(compact_date, "%Y%m%d")
+        except ValueError:
+            pass
+
+    if isinstance(value, (int, float)) or text:
+        try:
+            timestamp = float(value if isinstance(value, (int, float)) else text)
+            if timestamp <= 0:
+                return None
+            if timestamp > 10_000_000_000:
+                timestamp /= 1000
             return datetime.fromtimestamp(timestamp)
         except (OverflowError, OSError, ValueError):
-            return None
-    text = str(value or "").strip()
-    for fmt in ("%d%b%Y", "%d-%b-%Y", "%Y-%m-%d", "%d/%m/%Y"):
+            pass
+
+    if text:
+        try:
+            parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+            return parsed.astimezone().replace(tzinfo=None) if parsed.tzinfo else parsed
+        except ValueError:
+            pass
+    for fmt in ("%d%b%Y", "%d-%b-%Y", "%Y-%m-%d", "%d/%m/%Y", "%d%m%Y"):
         try:
             return datetime.strptime(text.upper(), fmt)
         except ValueError:
             continue
     return None
+
+
+def _nse_fo_expiry(value: Any) -> datetime | None:
+    """Parse an NSE F&O expiry using Kotak's SDK timestamp adjustment."""
+    expiry = _expiry_date(value)
+    if expiry is None:
+        return None
+
+    text = str(value or "").strip()
+    compact_date = text.split(".", 1)[0]
+    is_compact_date = (
+        len(compact_date) == 8
+        and compact_date.isdigit()
+        and compact_date[:2] in {"19", "20", "21"}
+    )
+    if is_compact_date:
+        return expiry
+
+    # Kotak's bundled scrip_search.py adds 315511200 seconds to raw NSE F&O
+    # Unix timestamps before formatting them as dates. Apply the same correction
+    # when this app reads the raw master directly; textual dates are already
+    # formatted and must not be shifted a second time.
+    try:
+        float(text)
+    except (TypeError, ValueError):
+        return expiry
+    return expiry + timedelta(seconds=KOTAK_NSE_FO_EXPIRY_OFFSET_SECONDS)
+
+
+def _nse_fo_row_expiry(row: dict[str, Any]) -> datetime | None:
+    expiries = [
+        _nse_fo_expiry(row.get(field))
+        for field in ("pExpiryDate", "lExpiryDate", "expiry", "expiry_date", "expiryDate")
+    ]
+    valid_expiries = [expiry for expiry in expiries if expiry is not None]
+    return max(valid_expiries) if valid_expiries else None
 
 
 def _resolve_expiry(expiry: str | None) -> str:
@@ -283,11 +365,82 @@ class KotakClient:
         return response
 
     def refresh_session_if_needed(self) -> None:
-        """Check for auth expiry and prompt re-login if needed."""
+        """Validate the current session with a read-only limits request.
+
+        Kotak does not expose a refresh-token endpoint in this login flow. This
+        request keeps an idle session active where the broker applies inactivity
+        timeouts and distinguishes an explicit session rejection from a transient
+        broker/network failure.
+        """
+        self.ensure_logged_in()
         try:
-            self.ensure_logged_in()
-        except KotakClientError:
-            raise
+            result = self.client.limits(segment="ALL", exchange="ALL", product="ALL")
+        except Exception as exc:
+            message = _exception_summary(exc)
+            if self._is_session_auth_error(message):
+                raise KotakSessionExpired("Kotak rejected the active session. Please log in again.") from exc
+            raise KotakClientError(f"Kotak session keepalive failed: {message}") from exc
+
+        if not isinstance(result, (dict, list)):
+            raise KotakClientError("Kotak session keepalive returned an invalid limits response.")
+
+        records = [result] if isinstance(result, dict) else result
+        for record in records:
+            if not isinstance(record, dict):
+                continue
+            code = str(_first_value(record, "stCode", "statusCode", "httpStatus", "code", default="")).strip()
+            error = _first_value(
+                record,
+                "Error Message",
+                "Error",
+                "error",
+                "emsg",
+                "errMsg",
+                "detail",
+                default=None,
+            )
+            status = str(_first_value(record, "stat", "status", default="")).strip().lower()
+            if code in {"401", "403"}:
+                raise KotakSessionExpired("Kotak rejected the active session. Please log in again.")
+            if error:
+                nested_errors = error if isinstance(error, list) else [error]
+                for nested_error in nested_errors:
+                    if isinstance(nested_error, dict):
+                        nested_code = str(
+                            _first_value(nested_error, "code", "status", "statusCode", default="")
+                        ).strip()
+                        if nested_code in {"401", "403"}:
+                            raise KotakSessionExpired("Kotak rejected the active session. Please log in again.")
+                message = _exception_summary(error) if isinstance(error, Exception) else str(error)
+                if self._is_session_auth_error(message):
+                    raise KotakSessionExpired("Kotak rejected the active session. Please log in again.")
+                raise KotakClientError(f"Kotak session keepalive failed: {message[:240]}")
+            if status and status not in {"ok", "success", "200"}:
+                message = str(_first_value(record, "message", "description", default=status))
+                if self._is_session_auth_error(message):
+                    raise KotakSessionExpired("Kotak rejected the active session. Please log in again.")
+                raise KotakClientError(f"Kotak session keepalive returned status: {message[:180]}")
+
+    @staticmethod
+    def _is_session_auth_error(message: str) -> bool:
+        lower = message.lower()
+        return any(
+            marker in lower
+            for marker in (
+                "invalid session",
+                "session expired",
+                "session is expired",
+                "unauthorized",
+                "invalid sid",
+                "please re-login",
+                "re-login to continue",
+                "complete the 2fa process",
+                "http 401",
+                "http 403",
+                "status=401",
+                "status=403",
+            )
+        )
 
     def get_quotes(
         self,
@@ -346,13 +499,280 @@ class KotakClient:
                         "ltp": ltp,
                         "bid": _number(_quote_value(quote, "bid", "bestBid", "best_bid", "buyPrice", "buy_price", "bp1", "bp")),
                         "ask": _number(_quote_value(quote, "ask", "bestAsk", "best_ask", "sellPrice", "sell_price", "sp1", "sp")),
-                        "volume": _integer(_quote_value(quote, "volume", "tradedVolume", "volume_traded", "last_volume", "v")),
+                        "volume": _integer(_quote_value(quote, "volume", "volumeTradedToday", "volume_traded_today", "tradedVolume", "traded_volume", "volume_traded", "last_volume", "vol", "v")),
+                        "open_interest": _optional_integer(_quote_value(quote, "open_int", "openInt", "openInterest", "open_interest", "oi", "oi_day")),
+                        "open_interest_change": _optional_integer(_quote_value(quote, "oiChange", "openInterestChange", "open_interest_change", "changeInOI", "oi_chg")),
                         "change": raw_change,
                         "change_pct": raw_change_pct,
                     })
             return {"quotes": quotes}
         except Exception as exc:
-            raise KotakClientError(f"Quote fetch failed: {exc}") from exc
+            raise KotakClientError(f"Quote fetch failed: {_exception_summary(exc)}") from exc
+
+    def get_quotes_for_symbols(self, symbols: list[str]) -> dict[str, float]:
+        """Resolve and quote only requested NSE cash symbols, in broker-safe batches."""
+        self.ensure_logged_in()
+        normalized_symbols = list(dict.fromkeys(str(symbol).strip().upper().removesuffix("-EQ") for symbol in symbols if str(symbol).strip()))
+        if not normalized_symbols:
+            return {}
+        master_rows = self._load_scrip_master("nse_cm")
+        requested = [{"symbol": symbol, "isin": ""} for symbol in normalized_symbols]
+        tokens_by_symbol = match_constituent_tokens(requested, master_rows)
+        token_to_symbol = {
+            token_data["instrument_token"]: symbol
+            for symbol, token_data in tokens_by_symbol.items()
+            if token_data.get("instrument_token")
+        }
+        if not token_to_symbol:
+            logger.info("Kotak instrument master has no tokens for %s requested scanner symbols", len(normalized_symbols))
+            return {}
+        response = self.get_quotes(list(token_to_symbol), exchange_segment="nse_cm", quote_type="ltp")
+        prices: dict[str, float] = {}
+        for quote in response.get("quotes", []):
+            symbol = token_to_symbol.get(str(quote.get("instrument_token") or ""))
+            ltp = _optional_number(quote.get("ltp"))
+            if symbol and ltp is not None and ltp > 0:
+                prices[symbol] = ltp
+        return prices
+
+    def get_equity_derivatives_for_symbols(
+        self, symbols: list[str], spot_prices: dict[str, float] | None = None,
+    ) -> dict[str, dict[str, Any]]:
+        """Fetch bounded futures/near-ATM option OI snapshots for shortlisted stocks.
+
+        Only the current Kotak scrip master is used for derivative token resolution. An
+        SDK-bundled token file can be years out of date and is not safe for current
+        expiry selection.
+        """
+        self.ensure_logged_in()
+        normalized = list(dict.fromkeys(
+            str(symbol).strip().upper().removesuffix("-EQ")
+            for symbol in symbols if str(symbol).strip()
+        ))
+        if not normalized:
+            return {}
+
+        master_rows = self._load_scrip_master("nse_fo")
+        if self._scrip_master_warnings.get("nse_fo"):
+            raise KotakClientError(
+                "Live NSE F&O instrument master is unavailable; cached contract tokens were not used for derivatives."
+            )
+
+        today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        prices = {str(key).upper(): _optional_number(value) for key, value in (spot_prices or {}).items()}
+        instruments: dict[str, dict[str, Any]] = {}
+        selection: dict[str, dict[str, Any]] = {}
+
+        for symbol in normalized:
+            rows = [
+                row for row in master_rows
+                if str(row.get("pSymbolName") or "").strip().upper() == symbol
+            ]
+            future_rows: list[tuple[datetime, dict[str, Any]]] = []
+            option_rows: list[tuple[datetime, dict[str, Any], float, str]] = []
+            for row in rows:
+                instrument_type = str(row.get("pInstType") or "").strip().upper()
+                expiry = _nse_fo_row_expiry(row)
+                token = str(row.get("pSymbol") or "").strip().split("|")[-1]
+                if not token or not expiry or expiry < today:
+                    continue
+                if instrument_type == "FUTSTK":
+                    future_rows.append((expiry, row))
+                elif instrument_type == "OPTSTK":
+                    raw_strike = _optional_number(row.get("dStrikePrice;") or row.get("dStrikePrice") or row.get("strike_price"))
+                    option_type = str(row.get("pOptionType") or "").strip().upper()
+                    if raw_strike is None or option_type not in {"CE", "PE"}:
+                        continue
+                    strike = raw_strike / 100 if "dStrikePrice;" in row or "dStrikePrice" in row else raw_strike
+                    option_rows.append((expiry, row, strike, option_type))
+
+            future = min(future_rows, key=lambda item: item[0]) if future_rows else None
+            option_expiries = sorted({item[0] for item in option_rows})
+            option_expiry = option_expiries[0] if option_expiries else None
+            spot = prices.get(symbol)
+            chosen_options: list[tuple[datetime, dict[str, Any], float, str]] = []
+            if option_expiry and spot and spot > 0:
+                expiry_options = [item for item in option_rows if item[0] == option_expiry]
+                strikes = sorted({item[2] for item in expiry_options})
+                nearest_strikes = set(sorted(strikes, key=lambda value: abs(value - spot))[:7])
+                chosen_options = [item for item in expiry_options if item[2] in nearest_strikes]
+
+            current_selection: dict[str, Any] = {
+                "future_expiry": future[0].date().isoformat() if future else None,
+                "option_expiry": option_expiry.date().isoformat() if option_expiry else None,
+                "option_contract_count": len(chosen_options),
+            }
+            if future:
+                row = future[1]
+                token = str(row.get("pSymbol") or "").strip().split("|")[-1]
+                instruments[token] = {"symbol": symbol, "kind": "future", "row": row}
+                current_selection["future_token"] = token
+            for expiry, row, strike, option_type in chosen_options:
+                token = str(row.get("pSymbol") or "").strip().split("|")[-1]
+                instruments[token] = {
+                    "symbol": symbol, "kind": "option", "option_type": option_type,
+                    "strike": strike, "row": row,
+                }
+            selection[symbol] = current_selection
+
+        snapshots = {
+            symbol: {
+                "status": "unavailable",
+                "reason": "No current F&O contracts were found in Kotak's live instrument master.",
+                "source": "Kotak Neo",
+            }
+            for symbol in normalized
+        }
+        if not instruments:
+            return snapshots
+
+        quote_rows = self.get_quotes(list(instruments), exchange_segment="nse_fo", quote_type="all").get("quotes", [])
+        quotes_by_token = {str(item.get("instrument_token") or ""): item for item in quote_rows}
+        for symbol in normalized:
+            details = selection[symbol]
+            future_quote = quotes_by_token.get(details.get("future_token", ""), {})
+            call_oi = put_oi = 0
+            call_count = put_count = 0
+            for token, instrument in instruments.items():
+                if instrument["symbol"] != symbol or instrument["kind"] != "option":
+                    continue
+                oi = _optional_integer(quotes_by_token.get(token, {}).get("open_interest"))
+                if oi is None:
+                    continue
+                if instrument["option_type"] == "CE":
+                    call_oi += oi
+                    call_count += 1
+                else:
+                    put_oi += oi
+                    put_count += 1
+
+            future_ltp = _optional_number(future_quote.get("ltp"))
+            future_oi = _optional_integer(future_quote.get("open_interest"))
+            has_option_oi = call_count > 0 and put_count > 0
+            pcr = put_oi / call_oi if has_option_oi and call_oi > 0 else None
+            has_data = future_ltp is not None or future_oi is not None or has_option_oi
+            if not has_data:
+                snapshots[symbol] = {
+                    **snapshots[symbol],
+                    "future_expiry": details.get("future_expiry"),
+                    "option_expiry": details.get("option_expiry"),
+                    "reason": "Kotak returned current contract tokens, but no live derivative quote or open-interest fields.",
+                }
+                continue
+
+            snapshots[symbol] = {
+                "status": "available" if has_option_oi else "partial",
+                "source": "Kotak Neo F&O quote snapshot",
+                "as_of": datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(timespec="seconds"),
+                "future_expiry": details.get("future_expiry"),
+                "future_ltp": future_ltp,
+                "future_open_interest": future_oi,
+                "future_open_interest_change": _optional_integer(future_quote.get("open_interest_change")),
+                "option_expiry": details.get("option_expiry"),
+                "call_open_interest": call_oi if call_count else None,
+                "put_open_interest": put_oi if put_count else None,
+                "put_call_oi_ratio": pcr,
+                "option_contract_count": details.get("option_contract_count", 0),
+                "reason": (
+                    "Kotak quotes cover the nearest active expiry and seven strikes closest to spot; OI totals are a local strike slice, not full-chain OI."
+                    if has_option_oi else
+                    "Futures quote is available; option-chain OI was incomplete for the nearest expiry and selected near-ATM strikes."
+                ),
+            }
+        return snapshots
+
+    def get_fno_stock_universe(self) -> dict[str, Any]:
+        """Return NSE stock-derivative underlyings and the master freshness state.
+
+        A dated local master may provide symbol membership during a Kotak
+        outage, but its contract tokens are not used for live derivative quotes.
+        Index derivatives are excluded by accepting only FUTSTK/OPTSTK rows.
+        """
+        self.ensure_logged_in()
+        rows = self._load_scrip_master("nse_fo")
+        master_warning = self._scrip_master_warnings.get("nse_fo")
+
+        today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        members: dict[str, dict[str, str]] = {}
+        stock_contract_rows = 0
+        parseable_expiry_rows = 0
+        active_contract_rows = 0
+        expiry_examples: list[dict[str, str]] = []
+        type_examples: dict[str, int] = {}
+        earliest_expiry: datetime | None = None
+        latest_expiry: datetime | None = None
+        latest_contract: dict[str, str] = {}
+        for row in rows:
+            instrument_type = str(row.get("pInstType") or "").strip().upper()
+            if instrument_type and (instrument_type in type_examples or len(type_examples) < 12):
+                type_examples[instrument_type] = type_examples.get(instrument_type, 0) + 1
+            if instrument_type not in {"FUTSTK", "OPTSTK"}:
+                continue
+            stock_contract_rows += 1
+            expiry = _nse_fo_row_expiry(row)
+            if expiry:
+                parseable_expiry_rows += 1
+                if earliest_expiry is None or expiry < earliest_expiry:
+                    earliest_expiry = expiry
+                if latest_expiry is None or expiry > latest_expiry:
+                    latest_expiry = expiry
+                    latest_contract = {
+                        "type": instrument_type,
+                        "symbol": str(row.get("pSymbolName") or "")[:32],
+                        "trading_symbol": str(row.get("pTrdSymbol") or "")[:48],
+                        "pExpiryDate": str(row.get("pExpiryDate") or "")[:32],
+                        "lExpiryDate": str(row.get("lExpiryDate") or "")[:32],
+                        "parsed_expiry": expiry.date().isoformat(),
+                    }
+            elif len(expiry_examples) < 4:
+                expiry_examples.append({
+                    "type": instrument_type,
+                    "symbol": str(row.get("pSymbolName") or row.get("pTrdSymbol") or "")[:40],
+                    "pExpiryDate": str(row.get("pExpiryDate") or "")[:32],
+                    "lExpiryDate": str(row.get("lExpiryDate") or "")[:32],
+                })
+            if not expiry or expiry < today:
+                continue
+            active_contract_rows += 1
+            symbol = str(row.get("pSymbolName") or "").strip().upper()
+            if not symbol or symbol in {"NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "SENSEX"}:
+                continue
+            members.setdefault(symbol, {
+                "symbol": symbol,
+                "name": symbol,
+                "industry": "Unknown",
+            })
+
+        if not members:
+            logger.warning(
+                "NSE F&O master had no active stock underlyings: rows=%s parseable_expiries=%s "
+                "active_rows=%s sample_unparsed=%s instrument_types=%s today=%s expiry_range=%s..%s "
+                "latest_contract=%s cached_master=%s",
+                stock_contract_rows,
+                parseable_expiry_rows,
+                active_contract_rows,
+                expiry_examples,
+                type_examples,
+                today.date().isoformat(),
+                earliest_expiry.date().isoformat() if earliest_expiry else None,
+                latest_expiry.date().isoformat() if latest_expiry else None,
+                latest_contract,
+                bool(master_warning),
+            )
+            raise KotakClientError(
+                "Kotak's NSE F&O master returned no unexpired stock derivative underlyings "
+                f"(stock contract rows={stock_contract_rows}, parseable expiry rows={parseable_expiry_rows}, "
+                f"active rows={active_contract_rows}, instrument types seen={type_examples}, "
+                f"today={today.date().isoformat()}, expiry range="
+                f"{earliest_expiry.date().isoformat() if earliest_expiry else 'unavailable'}.."
+                f"{latest_expiry.date().isoformat() if latest_expiry else 'unavailable'}, "
+                f"latest contract={latest_contract}, cached master={bool(master_warning)})."
+            )
+        return {
+            "members": [members[symbol] for symbol in sorted(members)],
+            "source": "Kotak cached NSE F&O instrument master" if master_warning else "Kotak live NSE F&O instrument master",
+            "warning": master_warning,
+        }
 
     def _load_scrip_master(self, exchange_segment: str) -> list[dict[str, Any]]:
         """Download Kotak's instrument master, falling back to the SDK's local copy."""
@@ -416,8 +836,17 @@ class KotakClient:
         logger.warning("Using cached Kotak %s instrument file dated %s", exchange_segment, cache_date)
         return rows
 
-    def _watchlist_catalog(self) -> Dict[str, Any]:
+    def _watchlist_catalog(self, indices_only: bool = False) -> Dict[str, Any]:
         """Build watchlist metadata and resolve Kotak instrument tokens."""
+        if indices_only:
+            indices = match_index_tokens({})
+            tokens = {"NIFTY 50": "Nifty 50", "NIFTY BANK": "Nifty Bank", "SENSEX": "SENSEX"}
+            for index in indices:
+                index["instrument_token"] = tokens[index["symbol"]]
+            return {"indices": indices, "stocks": [], "constituent_count": 0,
+                    "stock_token_count": 0, "stocks_without_token": [], "catalog_warning": None,
+                    "constituents_source": "Kotak indices",
+                    "updated_at": datetime.now().astimezone().isoformat(timespec="seconds")}
         constituents = get_nifty50_constituents()
         master_rows: dict[str, list[dict[str, Any]]] = {}
         master_errors = []
@@ -493,11 +922,11 @@ class KotakClient:
             "catalog_warning": warning,
         }
 
-    def get_watchlist(self) -> Dict[str, Any]:
+    def get_watchlist(self, indices_only: bool = False) -> Dict[str, Any]:
         """Return an initial quote snapshot; subsequent updates use SFeed ticks."""
         self.ensure_logged_in()
         try:
-            watchlist = self._watchlist_catalog()
+            watchlist = self._watchlist_catalog(indices_only=True) if indices_only else self._watchlist_catalog()
             quote_batches: dict[str, list[str]] = {"nse_cm": [], "bse_cm": []}
             for stock in watchlist["stocks"]:
                 if stock["instrument_token"]:
@@ -535,7 +964,7 @@ class KotakClient:
         except Exception as exc:
             raise KotakClientError(f"Watchlist quote fetch failed: {exc}") from exc
 
-    async def watchlist_tick_stream(self) -> AsyncIterator[dict[str, Any]]:
+    async def watchlist_tick_stream(self, indices_only: bool = False) -> AsyncIterator[dict[str, Any]]:
         """Yield live Kotak SFeed price and market-status events for the watchlist."""
         self.ensure_logged_in()
         configuration = self.client.configuration
@@ -545,7 +974,7 @@ class KotakClient:
             raise KotakClientError("Kotak session is missing credentials required by the live market feed.")
 
         try:
-            catalog = await asyncio.to_thread(self._watchlist_catalog)
+            catalog = await asyncio.to_thread(self._watchlist_catalog, True) if indices_only else await asyncio.to_thread(self._watchlist_catalog)
         except Exception as exc:
             raise KotakClientError(f"Could not prepare live watchlist subscriptions: {exc}") from exc
 
@@ -764,20 +1193,41 @@ class KotakClient:
         """Resolve the current BANKNIFTY index future from Kotak's live master."""
         today = datetime.now().date()
         candidates: list[tuple[datetime, dict[str, Any]]] = []
-        for row in self._load_scrip_master("nse_fo"):
-            name = str(row.get("pSymbolName") or row.get("symbol") or "").upper().replace(" ", "")
-            instrument_type = str(row.get("pInstType") or row.get("instrument_type") or "").upper()
-            expiry = _expiry_date(row.get("pExpiryDate") or row.get("expiry"))
-            token = str(row.get("pSymbol") or row.get("instrument_token") or "").strip()
-            if name == "BANKNIFTY" and instrument_type.startswith("FUT") and token and expiry and expiry.date() >= today:
-                candidates.append((expiry, row))
+        sources: list[list[dict[str, Any]]] = []
+        # Do not use SDK search_scrip here: it downloads/parses the entire NFO
+        # CSV synchronously and continues after a caller timeout. The wrapper's
+        # direct master loader has bounded network requests and caching.
+        try:
+            sources.append(self._load_scrip_master("nse_fo"))
+        except Exception as exc:
+            logger.warning("BANKNIFTY futures master load failed: %s", type(exc).__name__)
+
+        for rows in sources:
+            for row in rows:
+                name = str(row.get("pSymbolName") or row.get("symbol") or "").upper().replace(" ", "")
+                name = name.replace("NIFTYBANK", "BANKNIFTY")
+                instrument_type = str(row.get("pInstType") or row.get("instrument_type") or "").upper()
+                expiry = _nse_fo_row_expiry(row)
+                token = str(row.get("pSymbol") or row.get("instrument_token") or row.get("token") or "").strip()
+                if name == "BANKNIFTY" and instrument_type.startswith("FUT") and token and expiry and expiry.date() >= today:
+                    candidates.append((expiry, row))
         if not candidates:
-            raise KotakClientError("Could not resolve a current BANKNIFTY futures contract from Kotak's instrument master.")
+            raise KotakClientError(
+                "Kotak returned no current BANKNIFTY future. Please refresh the broker session and confirm NFO market-data access."
+            )
         return min(candidates, key=lambda item: item[0])[1]
 
     async def banknifty_future_tick_stream(self) -> AsyncIterator[dict[str, Any]]:
         """Yield full live ticks for the nearest BANKNIFTY future, including volume."""
         self.ensure_logged_in()
+        india_now = datetime.now(ZoneInfo("Asia/Kolkata"))
+        if india_now.weekday() >= 5 or not (clock_time(9, 15) <= india_now.time() < clock_time(15, 30)):
+            yield {
+                "type": "status",
+                "state": "market_closed",
+                "message": "NSE is closed. The paper agent will receive live BANKNIFTY futures ticks on the next trading day, 09:15–15:30 IST.",
+            }
+            return
         configuration = self.client.configuration
         access_token = getattr(configuration, "edit_token", None) or self.session.trade_token
         sid = getattr(configuration, "edit_sid", None) or self.session.edit_sid
@@ -1154,12 +1604,35 @@ class KotakClient:
             
             holdings = []
             for h in raw_holdings:
+                quantity = _integer(_first_value(h, "quantity", "qty", default=0))
+                average_price = _number(_first_value(h, "averagePrice", "avgPrice", "avgPrc", default=0))
+                holding_cost = _number(_first_value(h, "holdingCost", "costValue", "investmentValue", default=0))
+                if holding_cost <= 0 and quantity and average_price > 0:
+                    holding_cost = average_price * quantity
+                if average_price <= 0 and quantity and holding_cost > 0:
+                    average_price = holding_cost / quantity
+
+                current_price = _number(_first_value(h, "closingPrice", "lastPrice", "ltp", "lastRate", default=0))
+                market_value = _number(_first_value(h, "mktValue", "marketValue", "currentValue", default=0))
+                if market_value <= 0 and current_price > 0 and quantity:
+                    market_value = current_price * quantity
+                if current_price <= 0 and market_value > 0 and quantity:
+                    current_price = market_value / quantity
+
+                # Kotak's holdings response gives cost and market value rather
+                # than a dedicated P&L field. Use those values as the source of
+                # truth, with averagePrice as a fallback when holdingCost is absent.
+                pnl = market_value - holding_cost
+                pnl_pct = pnl / holding_cost * 100 if holding_cost > 0 else 0.0
                 holding = {
-                    "symbol": h.get("displaySymbol") or h.get("symbol") or h.get("commonScripCode", ""),
-                    "qty": int(h.get("quantity", 0)),
-                    "avg_price": float(h.get("averagePrice", 0)),
-                    "current_price": float(h.get("closingPrice", 0)),
-                    "value": float(h.get("mktValue", 0)),
+                    "symbol": _first_value(h, "displaySymbol", "symbol", "commonScripCode", default=""),
+                    "qty": quantity,
+                    "avg_price": average_price,
+                    "current_price": current_price,
+                    "value": market_value,
+                    "cost_value": holding_cost,
+                    "pnl": pnl,
+                    "pnl_pct": pnl_pct,
                 }
                 holdings.append(holding)
             
@@ -1362,6 +1835,31 @@ class KotakClient:
             matches = [entry for entry in catalog if entry["symbol"].startswith(symbol[:4]) or symbol in entry["symbol"]]
         return matches
 
+    def _option_contract_search(self, segment: str, symbol: str, expiry: str | None):
+        """Cache contract metadata only; option-chain quotes always remain fresh."""
+        key = (segment, symbol, expiry, datetime.now(ZoneInfo("Asia/Kolkata")).date())
+        now = time.monotonic()
+        cache = getattr(self, "_option_contract_cache", {})
+        cached = cache.get(key)
+        if cached and now - cached[0] < 300:
+            return cached[1]
+        result = self.client.search_scrip(
+            exchange_segment=segment, symbol=symbol, expiry=expiry,
+            option_type="", strike_price="",
+        )
+        records = result if isinstance(result, list) else (
+            result.get("results") or result.get("data") if isinstance(result, dict) else None
+        )
+        failed = isinstance(result, dict) and any(result.get(field) for field in ("error", "Error", "Error Message", "message"))
+        if isinstance(records, list) and records and not failed:
+            # Bound retained metadata, including old expiry/date selections.
+            cache = {k: v for k, v in cache.items() if now - v[0] < 300}
+            if len(cache) >= 32:
+                cache.pop(next(iter(cache)))
+            cache[key] = (time.monotonic(), result)
+            self._option_contract_cache = cache
+        return result
+
     def get_option_chain(self, symbol: str, expiry: str | None = None) -> Dict[str, Any]:
         """Fetch option chain information for index / F&O instruments."""
         self.ensure_logged_in()
@@ -1381,10 +1879,10 @@ class KotakClient:
             search_symbol, option_segment, underlying_segment, underlying_token = spec
             resolved_expiry = _resolve_expiry(expiry)
             try:
-                result = self.client.search_scrip(exchange_segment=option_segment, symbol=search_symbol, expiry=resolved_expiry, option_type="", strike_price="")
+                result = self._option_contract_search(option_segment, search_symbol, resolved_expiry)
             except Exception:
                 time.sleep(0.5)
-                result = self.client.search_scrip(exchange_segment=option_segment, symbol=search_symbol, expiry=resolved_expiry, option_type="", strike_price="")
+                result = self._option_contract_search(option_segment, search_symbol, resolved_expiry)
 
             if isinstance(result, dict):
                 if result.get("error") or result.get("Error") or result.get("message"):
@@ -1429,7 +1927,7 @@ class KotakClient:
             dated_contracts = []
             today = datetime.now()
             for contract in contracts:
-                contract_expiry = _expiry_date(contract.get("pExpiryDate") or contract.get("expiry"))
+                contract_expiry = _nse_fo_expiry(contract.get("pExpiryDate") or contract.get("expiry"))
                 if contract_expiry and contract_expiry >= today.replace(hour=0, minute=0, second=0, microsecond=0):
                     dated_contracts.append((contract_expiry, contract))
 
@@ -1443,8 +1941,8 @@ class KotakClient:
                 if requested_expiry:
                     matching_contracts = [
                         contract for contract in contracts
-                        if _expiry_date(contract.get("pExpiryDate") or contract.get("expiry"))
-                        and _expiry_date(contract.get("pExpiryDate") or contract.get("expiry")).date() == requested_expiry.date()
+                        if _nse_fo_expiry(contract.get("pExpiryDate") or contract.get("expiry"))
+                        and _nse_fo_expiry(contract.get("pExpiryDate") or contract.get("expiry")).date() == requested_expiry.date()
                     ]
                     if matching_contracts:
                         contracts = matching_contracts
@@ -1507,8 +2005,10 @@ class KotakClient:
                         row[f"{prefix}_bid"] = _number(_quote_value(quote, "bid", "bestBid", "best_bid", "buyPrice", "buy_price", "bp1", "bp"), 0)
                         row[f"{prefix}_ask"] = _number(_quote_value(quote, "ask", "bestAsk", "best_ask", "sellPrice", "sell_price", "sp1", "sp"), 0)
                         row[f"{prefix}_ltp"] = _number(_quote_value(quote, "ltp", "lastPrice", "lastTradedPrice", "last_traded_price", "lp"), 0)
-                        row[f"{prefix}_volume"] = _integer(_quote_value(quote, "volume", "tradedVolume", "volume_traded", "v"))
-                        row[f"{prefix}_oi"] = _integer(_quote_value(quote, "openInterest", "open_interest", "oi", "oi_day"))
+                        row[f"{prefix}_volume"] = _integer(_quote_value(quote, "volume", "volumeTradedToday", "volume_traded_today", "tradedVolume", "traded_volume", "volume_traded", "last_volume", "vol", "v"))
+                        reported_oi = _optional_integer(_quote_value(quote, "open_int", "openInt", "openInterest", "open_interest", "oi", "oi_day"))
+                        row[f"{prefix}_oi"] = reported_oi if reported_oi is not None else 0
+                        row[f"{prefix}_oi_available"] = reported_oi is not None
                 except Exception as exc:
                     quote_error = f"Live option quotes unavailable: {exc}"
             chains = [selected_grouped[strike] for strike in selected_strikes]
@@ -1631,7 +2131,13 @@ class KotakClient:
                     "qty": _integer(_first_value(o, "quantity", "orderQuantity", "qty", "ordQty", "totalQuantity")),
                     "filled_qty": _optional_integer(_first_value(o, "fldQty", "filledQty", "filledQuantity", "filled_qty", default=None)),
                     "unfilled_qty": _optional_integer(_first_value(o, "unFldSz", "unfilledQty", "unfilledQuantity", "unfilled_qty", default=None)),
-                    "price": _number(_first_value(o, "orderPrice", "price", "prc", "averagePrice", "avgPrice")),
+                    # Keep the submitted limit/request price separate from the
+                    # average execution price so order modification continues
+                    # to use the broker's original order price.
+                    "price": _number(_first_value(o, "orderPrice", "price", "prc")),
+                    "average_fill_price": _optional_number(_first_value(
+                        o, "avgPrc", "average_fill_price", "averageFillPrice", "averagePrice", "avgPrice", default=None
+                    )),
                     "order_type": str(_first_value(o, "orderType", "order_type", "ordTyp", "prcTp", "pt", default="L")).upper(),
                     "validity": validity,
                     "amo": "YES" if str(_first_value(o, "amo", "isAmo", "ordGenTp", "am", default="NO")).strip().upper() in {"YES", "TRUE", "1", "AMO"} else "NO",
@@ -1675,6 +2181,7 @@ class KotakClient:
                     trade_time = f"{trade_date} {fill_time}".strip()
                 trade = {
                     "trade_id": str(_first_value(t, "tradeId", "trade_id", "flId", "nOrdNo", default="")),
+                    "order_id": str(_first_value(t, "orderId", "orderID", "order_id", "nOrdNo", "orderNo", default="")),
                     "symbol": _first_value(t, "displaySymbol", "tradingSymbol", "pTrdSymbol", "trdSym", "sym", "symbol", "scripCode", default=""),
                     "side": str(_first_value(t, "transactionType", "trnsTp", "side", default="")).upper(),
                     "qty": _integer(_first_value(t, "tradeQty", "trdQty", "fldQty", "quantity", "qty")),

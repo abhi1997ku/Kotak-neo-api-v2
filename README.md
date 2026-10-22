@@ -111,6 +111,18 @@ The backend keeps the Kotak login session in memory. Log in again after restarti
 
 AMO orders are currently rejected by the backend with a service-unavailable response. Submit AMO orders through Kotak Neo directly until this route is re-enabled.
 
+## Swing-trade research scanner
+
+The scanner defaults to **Current F&O stocks**. It resolves stock underlyings from Kotak's `nse_fo` scrip master and also offers Nifty 50 and Nifty 500 universes. The F&O universe needs a Kotak login. If Kotak's live master is unavailable, a dated local SDK copy can supply symbol membership with a visible warning; cached derivative tokens are not used to fetch live derivatives quotes.
+
+The experimental AI pattern section uses a local nearest-neighbour model over daily OHLCV history. It compares each latest chart state with completed 3-, 10-, and 20-session historical windows, then displays the number of analogs and their observed outcomes. This is not a forecast, probability, or validated backtest. The historical sample uses today's eligible F&O names, so it has survivorship bias. Entry, stop, and target levels refer to the underlying shares; derivative premium, contract liquidity, and margin are not modelled. The scanner does not submit orders.
+
+The **Signal performance** panel saves newly generated rule-based and AI-pattern candidates (except `AVOID` and `NO TRADE`) to the local `screener_results.db` and tracks them for 10 completed trading sessions (about two weeks). It waits for a later daily candle to touch the entry zone, then records target/stop exits or a 10-session close. Repeated scans of the same symbol/setup/source on one date are logged once. The panel refreshes automatically every five minutes while open and has a manual refresh button. A daily candle that touches both the stop and a target is counted conservatively as a stop. Results use the underlying share price, not option premiums, and do not include fees or slippage. Existing signals from before this tracker was installed are not backfilled; no paper or live orders are placed.
+
+Daily OHLCV history comes from Yahoo Finance. Kotak provides shortlisted live quotes and, when its current F&O master is available, derivative snapshots. FII/DII, delivery-volume, and corporate-event reports remain separate research checks; upload authorized reports in the scanner when needed. No AI provider key or new environment variable is required.
+
+The API accepts `GET /api/screener/scan?universe=fno`, `universe=nifty50`, or `universe=nifty500`, and `GET /api/screener/signal-performance` to refresh the tracked results. See the dashboard's research coverage and warnings for source freshness and missing data.
+
 ## Troubleshooting
 
 | Symptom | Check |

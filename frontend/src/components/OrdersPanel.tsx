@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient, type Order } from "../services/api";
+import { apiClient, type Order, type Trade } from "../services/api";
 
 const orderTimestamp = (value: string): number | null => {
   const text = value?.trim();
@@ -33,6 +33,48 @@ const orderTimestamp = (value: string): number | null => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
+const matchedAverageFillPrice = (order: Order, orders: Order[], trades: Trade[]): number | null => {
+  const filledQuantity = Number(order.filled_qty || 0);
+  if (filledQuantity <= 0) return null;
+
+  const reportedAverage = Number(order.average_fill_price || 0);
+  if (reportedAverage > 0) return reportedAverage;
+
+  const averageOf = (fills: Trade[]): number | null => {
+    if (fills.some((trade) => Number(trade.qty || 0) <= 0 || Number(trade.price || 0) <= 0)) return null;
+    const quantity = fills.reduce((sum, trade) => sum + Number(trade.qty || 0), 0);
+    if (quantity !== filledQuantity || quantity <= 0) return null;
+    return fills.reduce((sum, trade) => sum + Number(trade.qty || 0) * Number(trade.price || 0), 0) / quantity;
+  };
+
+  const linkedTrades = trades.filter((trade) => trade.order_id && trade.order_id === order.order_id);
+  if (linkedTrades.length) return averageOf(linkedTrades);
+
+  // Older running app versions did not expose the trade's order ID. In that
+  // case, only infer a match when one filled order for this symbol/side is
+  // near the trade time and the nearby execution quantity matches exactly.
+  const symbol = order.symbol?.trim().toUpperCase();
+  const side = order.side;
+  const orderTime = orderTimestamp(order.timestamp);
+  if (!symbol || orderTime === null) return null;
+  const relatedOrders = orders.filter((candidate) => {
+    const candidateTime = orderTimestamp(candidate.timestamp);
+    return candidate.symbol?.trim().toUpperCase() === symbol
+      && candidate.side === side
+      && Number(candidate.filled_qty || 0) > 0
+      && candidateTime !== null
+      && Math.abs(candidateTime - orderTime) <= 5 * 60 * 1000;
+  });
+  if (relatedOrders.length !== 1) return null;
+
+  const nearbyTrades = trades.filter((trade) => {
+    if (trade.order_id || trade.symbol?.trim().toUpperCase() !== symbol || trade.side !== side) return false;
+    const tradeTime = orderTimestamp(trade.timestamp);
+    return tradeTime !== null && Math.abs(tradeTime - orderTime) <= 5 * 60 * 1000;
+  });
+  return averageOf(nearbyTrades);
+};
+
 export function OrdersPanel() {
   const queryClient = useQueryClient();
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
@@ -50,6 +92,11 @@ export function OrdersPanel() {
     refetchInterval: editingOrderId || busyOrderId ? false : 3000,
     refetchOnWindowFocus: !editingOrderId && !busyOrderId,
     refetchOnReconnect: !editingOrderId && !busyOrderId,
+  });
+  const { data: tradeData } = useQuery({
+    queryKey: ["trade-book"],
+    queryFn: () => apiClient.getTradeBook(),
+    refetchInterval: 10000,
   });
   const responseOrders = data?.orders || [];
 
@@ -229,6 +276,8 @@ export function OrdersPanel() {
       ) : (
         <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
           {orders.map((order: Order) => {
+            const averageFillPrice = matchedAverageFillPrice(order, responseOrders, tradeData?.trades || []);
+            const shownQuantity = averageFillPrice !== null ? Number(order.filled_qty || order.qty) : order.qty;
             const knownStatus = Boolean(order.status) && !["UNKNOWN", "NONE"].includes(order.status.trim().toUpperCase());
             const canManage = Boolean(order.order_id) && knownStatus && !isTerminal(order.status);
             const isEditing = editingOrderId === order.order_id;
@@ -239,9 +288,12 @@ export function OrdersPanel() {
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-slate-200">{order.symbol || "Unknown instrument"}</p>
                     <p className="text-slate-400">
-                      {order.side === "BUY" ? "Buy" : "Sell"} {order.qty} @ ₹{Number(order.price || 0).toFixed(2)}
-                      {order.order_type ? " · " + order.order_type : ""}
+                      {order.side === "BUY" ? "Buy" : "Sell"} {shownQuantity} @ ₹{(averageFillPrice ?? Number(order.price || 0)).toFixed(2)}
+                      {averageFillPrice !== null ? " avg fill" : order.order_type ? " · " + order.order_type : ""}
                     </p>
+                    {averageFillPrice !== null && Number(order.price || 0) > 0 && Math.abs(averageFillPrice - Number(order.price)) > 0.005 && (
+                      <p className="text-slate-500">Order price ₹{Number(order.price).toFixed(2)}</p>
+                    )}
                     <p className="text-slate-400">
                       {order.filled_qty == null
                         ? "Filled quantity not reported"

@@ -17,26 +17,26 @@ async def _wait_for_disconnect(websocket: WebSocket) -> None:
             return
 
 
-async def _send_live_events(websocket: WebSocket, client) -> None:
-    async for event in client.watchlist_tick_stream():
+async def _send_live_events(websocket: WebSocket, client, indices_only: bool = False) -> None:
+    async for event in (client.watchlist_tick_stream(indices_only=True) if indices_only else client.watchlist_tick_stream()):
         await websocket.send_json(event)
 
 
 @router.get("/")
-def list_watchlist() -> dict:
+def list_watchlist(indices_only: bool = False) -> dict:
     session_mgr = get_session_manager()
     client = session_mgr.get_client()
     if not client:
         raise HTTPException(status_code=401, detail="Kotak session is not active. Please login first.")
     try:
-        return client.get_watchlist()
+        return client.get_watchlist(indices_only=True) if indices_only else client.get_watchlist()
     except KotakClientError as exc:
         status_code = 401 if "session is not active" in str(exc).lower() else 502
         raise HTTPException(status_code=status_code, detail=str(exc)) from exc
 
 
 @router.websocket("/stream")
-async def stream_watchlist(websocket: WebSocket) -> None:
+async def stream_watchlist(websocket: WebSocket, indices_only: bool = False) -> None:
     await websocket.accept()
     client = get_session_manager().get_client()
     if not client:
@@ -45,7 +45,7 @@ async def stream_watchlist(websocket: WebSocket) -> None:
         return
 
     try:
-        stream_task = asyncio.create_task(_send_live_events(websocket, client))
+        stream_task = asyncio.create_task(_send_live_events(websocket, client, indices_only))
         disconnect_task = asyncio.create_task(_wait_for_disconnect(websocket))
         done, pending = await asyncio.wait(
             {stream_task, disconnect_task},

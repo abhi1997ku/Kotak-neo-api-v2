@@ -1,0 +1,229 @@
+{
+  "scope": "Gross underlying fixed-stop/target diagnostics, not option P&L",
+  "weeks": {
+    "Oct12_16": {
+      "baseline": {
+        "accepted": 1,
+        "filled": 0,
+        "completed": 0,
+        "wins": 0,
+        "gross_points": 0,
+        "gross_r": 0,
+        "daily_fills": {
+          "2026-10-12": 0,
+          "2026-10-13": 0,
+          "2026-10-14": 0,
+          "2026-10-15": 0,
+          "2026-10-16": 0
+        },
+        "results": {
+          "EXPIRED_UNFILLED": 1
+        },
+        "trades": [
+          {
+            "timestamp": "2026-10-16T14:46:00+05:30",
+            "side": "long",
+            "zone_id": "2026-10-16T14:45:00+05:30:long",
+            "entry": 55930.05,
+            "stop": 55894.95,
+            "risk": 35.10000000000582,
+            "target": 56053.0,
+            "accepted": true,
+            "reason_codes": [],
+            "valid_until": "2026-10-16T14:47:00+05:30",
+            "execution_status": "NOT_SIMULATED",
+            "itm_strikes": 2,
+            "points": null,
+            "r_multiple": null,
+            "scope": "underlying_gross_diagnostic",
+            "result": "EXPIRED_UNFILLED"
+          }
+        ]
+      },
+      "entry_3m": {
+        "accepted": 1,
+        "filled": 0,
+        "completed": 0,
+        "wins": 0,
+        "gross_points": 0,
+        "gross_r": 0,
+        "daily_fills": {
+          "2026-10-12": 0,
+          "2026-10-13": 0,
+          "2026-10-14": 0,
+          "2026-10-15": 0,
+          "2026-10-16": 0
+        },
+        "results": {
+          "EXPIRED_UNFILLED": 1
+        },
+        "trades": [
+          {
+            "timestamp": "2026-10-16T14:46:00+05:30",
+            "side": "long",
+            "zone_id": "2026-10-16T14:45:00+05:30:long",
+            "entry": 55930.05,
+            "stop": 55894.95,
+            "risk": 35.10000000000582,
+            "target": 56053.0,
+            "accepted": true,
+            "reason_codes": [],
+            "valid_until": "2026-10-16T14:47:00+05:30",
+            "execution_status": "NOT_SIMULATED",
+            "itm_strikes": 2,
+            "points": null,
+            "r_multiple": null,
+            "scope": "underlying_gross_diagnostic",
+            "result": "EXPIRED_UNFILLED"
+          }
+        ]
+      },
+      "volume_ranking_only": {
+        "accepted": 1,
+        "filled": 0,
+        "completed": 0,
+        "wins": 0,
+        "gross_points": 0,
+        "gross_r": 0,
+        "daily_fills": {
+          "2026-10-12": 0,
+          "2026-10-13": 0,
+          "2026-10-14": 0,
+          "2026-10-15": 0,
+          "2026-10-16": 0
+        },
+        "results": {
+          "EXPIRED_UNFILLED": 1
+        },
+        "trades": [
+          {
+            "timestamp": "2026-10-16T14:46:00+05:30",
+            "side": "long",
+            "zone_id": "2026-10-16T14:45:00+05:30:long",
+            "entry": 55930.05,
+            "stop": 55894.95,
+            "risk": 35.10000000000582,
+            "target": 56053.0,
+            "accepted": true,
+            "reason_codes": [],
+            "valid_until": "2026-10-16T14:47:00+05:30",
+            "execution_status": "NOT_SIMULATED",
+            "itm_strikes": 2,
+            "points": null,
+            "r_multiple": null,
+            "scope": "underlying_gross_diagnostic",
+            "result": "EXPIRED_UNFILLED"
+          }
+        ]
+      },
+      "volume_ranking_entry_3m": {
+        "accepted": 1,
+        "filled": 0,
+        "completed": 0,
+        "wins": 0,
+        "gross_points": 0,
+        "gross_r": 0,
+        "daily_fills": {
+          "2026-10-12": 0,
+          "2026-10-13": 0,
+          "2026-10-14": 0,
+          "2026-10-15": 0,
+          "2026-10-16": 0
+        },
+        "results": {
+          "EXPIRED_UNFILLED": 1
+        },
+        "trades": [
+          {
+            "timestamp": "2026-10-16T14:46:00+05:30",
+            "side": "long",
+            "zone_id": "2026-10-16T14:45:00+05:30:long",
+            "entry": 55930.05,
+            "stop": 55894.95,
+            "risk": 35.10000000000582,
+            "target": 56053.0,
+            "accepted": true,
+            "reason_codes": [],
+            "valid_until": "2026-10-16T14:47:00+05:30",
+            "execution_status": "NOT_SIMULATED",
+            "itm_strikes": 2,
+            "points": null,
+            "r_multiple": null,
+            "scope": "underlying_gross_diagnostic",
+            "result": "EXPIRED_UNFILLED"
+          }
+        ]
+      }
+    },
+    "Oct05_09": {
+      "baseline": {
+        "accepted": 0,
+        "filled": 0,
+        "completed": 0,
+        "wins": 0,
+        "gross_points": 0,
+        "gross_r": 0,
+        "daily_fills": {
+          "2026-10-05": 0,
+          "2026-10-06": 0,
+          "2026-10-07": 0,
+          "2026-10-08": 0,
+          "2026-10-09": 0
+        },
+        "results": {},
+        "trades": []
+      },
+      "entry_3m": {
+        "accepted": 0,
+        "filled": 0,
+        "completed": 0,
+        "wins": 0,
+        "gross_points": 0,
+        "gross_r": 0,
+        "daily_fills": {
+          "2026-10-05": 0,
+          "2026-10-06": 0,
+          "2026-10-07": 0,
+          "2026-10-08": 0,
+          "2026-10-09": 0
+        },
+        "results": {},
+        "trades": []
+      },
+      "volume_ranking_only": {
+        "accepted": 0,
+        "filled": 0,
+        "completed": 0,
+        "wins": 0,
+        "gross_points": 0,
+        "gross_r": 0,
+        "daily_fills": {
+          "2026-10-05": 0,
+          "2026-10-06": 0,
+          "2026-10-07": 0,
+          "2026-10-08": 0,
+          "2026-10-09": 0
+        },
+        "results": {},
+        "trades": []
+      },
+      "volume_ranking_entry_3m": {
+        "accepted": 0,
+        "filled": 0,
+        "completed": 0,
+        "wins": 0,
+        "gross_points": 0,
+        "gross_r": 0,
+        "daily_fills": {
+          "2026-10-05": 0,
+          "2026-10-06": 0,
+          "2026-10-07": 0,
+          "2026-10-08": 0,
+          "2026-10-09": 0
+        },
+        "results": {},
+        "trades": []
+      }
+    }
+  }
+}

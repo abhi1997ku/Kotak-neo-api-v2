@@ -198,6 +198,8 @@ def run_daily_scan(mode: str = "real", min_rr: float = 2.0) -> Dict:
             "success": True,
             "scan_run_id": scan_run_id,
             "candidate_count": len(candidates),
+            "data_fetched_count": data_count,
+            "warning": "No real market data was returned. Synthetic results were not substituted." if mode == "real" and data_count == 0 else None,
             "candidates": candidates,
             "report": format_report(candidates),
         }

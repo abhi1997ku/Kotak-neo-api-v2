@@ -1,33 +1,29 @@
+import { PaperWorkspaceLink } from "./PaperWorkspaceLink";
+import { ManagedTradesPanel } from "./ManagedTradesPanel";
+import { OrderAcknowledgementStatus } from "./OrderAcknowledgementStatus";
 import { useState } from "react";
-import { BriefcaseBusiness, ChevronDown, LogOut, RefreshCw } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../contexts/AuthContext";
 import { PositionsPanel } from "./PositionsPanel";
-import { HoldingsPanel } from "./HoldingsPanel";
 import { OrdersPanel } from "./OrdersPanel";
-import { MarginPanel } from "./MarginPanel";
 import { SearchSuggestions, type SearchInstrument } from "./SearchSuggestions";
-import { SearchResultsPanel } from "./SearchResultsPanel";
+import { HoldingsPanel } from "./HoldingsPanel";
 import { OptionChainPanel } from "./OptionChainPanel";
-import { ScreenerPanel } from "./ScreenerPanel";
 import { WatchlistPanel } from "./WatchlistPanel";
-import { PaperTradingPanel } from "./PaperTradingPanel";
 import { OrderTicketModal, type OrderTicketRequest } from "./OrderTicketModal";
-import { type Holding, type Position, type WatchlistItem } from "../services/api";
+import { apiClient, type Holding, type Position, type WatchlistItem } from "../services/api";
 
 type OrderInstrument = SearchInstrument | WatchlistItem | Position | Holding;
 
 export function Dashboard() {
-  const { logout } = useAuth();
+  const { logout, sessionHealth } = useAuth();
   const queryClient = useQueryClient();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults] = useState<any[]>([]);
-  const [selectedSymbol, setSelectedSymbol] = useState<any | null>(null);
+  const [selectedSymbol, setSelectedSymbol] = useState<any | null>({ symbol: "NIFTY 50", name: "Nifty 50", option_chain_symbol: "NIFTY" });
   const [orderTicket, setOrderTicket] = useState<OrderTicketRequest | null>(null);
-  const [showHoldings, setShowHoldings] = useState(false);
+  const [showPortfolio, setShowPortfolio] = useState(false);
 
   const handleRefresh = () => {
-    queryClient.refetchQueries();
+    void queryClient.refetchQueries({ type: "active" });
   };
 
   const handleOrderRequest = (
@@ -66,12 +62,10 @@ export function Dashboard() {
           ? "SENSEX"
           : undefined;
     setSelectedSymbol(optionChainSymbol ? { ...symbol, option_chain_symbol: optionChainSymbol, exchange: "INDEX" } : symbol);
-    setSearchQuery(symbol.symbol);
     if (!optionChainSymbol && symbol.exchange !== "INDEX") handleOrderRequest(symbol as SearchInstrument, "BUY");
   };
 
   const handleWatchlistStockClick = (stock: WatchlistItem) => {
-    setSearchQuery(stock.symbol);
     setSelectedSymbol({
       ...stock,
       trading_symbol: stock.trading_symbol || `${stock.symbol}-EQ`,
@@ -81,6 +75,17 @@ export function Dashboard() {
 
   const handleWatchlistIndexClick = (index: WatchlistItem) => {
     handleSelectSymbol({ ...index, name: index.name, exchange: "INDEX" });
+  };
+
+  const previewIndex = (index: WatchlistItem) => {
+    const symbol = ({ "NIFTY 50": "NIFTY", "NIFTY BANK": "BANKNIFTY", "SENSEX": "SENSEX" } as Record<string, string>)[index.symbol];
+    if (!symbol || symbol === selectedSymbol?.option_chain_symbol) return;
+    void queryClient.prefetchQuery({
+      queryKey: ["option_chain", symbol, ""],
+      queryFn: () => apiClient.getOptionChain(symbol),
+      staleTime: 5000,
+      retry: false,
+    });
   };
 
   const handleExitPosition = (position: Position) => {
@@ -94,18 +99,13 @@ export function Dashboard() {
   };
 
   const handleSellHolding = (holding: Holding) => {
-    const tradingSymbol = holding.trading_symbol
-      || (holding.symbol.toUpperCase().endsWith("-EQ") ? holding.symbol : `${holding.symbol}-EQ`);
     const quantity = Math.max(0, Math.floor(holding.qty));
     if (quantity < 1) return;
     handleOrderRequest({
       ...holding,
-      name: holding.symbol,
-      exchange: "NSE",
-      trading_symbol: tradingSymbol,
+      trading_symbol: holding.trading_symbol || (holding.symbol.toUpperCase().endsWith("-EQ") ? holding.symbol : `${holding.symbol}-EQ`),
       exchange_segment: holding.exchange_segment || "nse_cm",
-      product: holding.product || "CNC",
-    } as SearchInstrument & Holding, "SELL", {
+    }, "SELL", {
       quantity,
       maxQuantity: quantity,
       product: holding.product || "CNC",
@@ -115,78 +115,51 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="flex min-h-screen">
-        <aside className="h-screen w-80 shrink-0 self-start overflow-y-auto border-r border-slate-800 bg-slate-900/80 p-4">
-          <div className="mb-8">
-            <h1 className="text-xl font-bold">Kotak Neo Terminal</h1>
-            <p className="text-sm text-slate-400">Personal trading dashboard</p>
-          </div>
-
-          <div className="mb-6">
-            <h2 className="mb-3 text-xs uppercase tracking-wide text-slate-400">Margin</h2>
-            <MarginPanel />
-          </div>
-
-          <div className="mb-6">
-            <h2 className="mb-2 text-xs uppercase tracking-wide text-slate-400">Search</h2>
-            <SearchSuggestions onSelectSymbol={handleSelectSymbol} onOrderRequest={handleOrderRequest} />
-          </div>
-
-          {searchQuery && searchResults.length > 0 && (
-            <SearchResultsPanel results={searchResults} query={searchQuery} onSelectResult={handleSelectSymbol} />
-          )}
-
-          <div className="space-y-2 border-t border-slate-800 pt-4">
-            <button onClick={handleRefresh} className="flex w-full items-center gap-2 rounded-md bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">
-              <RefreshCw size={16} />
-              Refresh
-            </button>
-            <button onClick={logout} className="flex w-full items-center gap-2 rounded-md bg-red-900/30 px-3 py-2 text-sm text-red-300 hover:bg-red-900/50">
-              <LogOut size={16} />
-              Logout
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowHoldings((open) => !open)}
-              aria-expanded={showHoldings}
-              className="flex w-full items-center justify-between rounded-md bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700"
-            >
-              <span className="flex items-center gap-2"><BriefcaseBusiness size={16} />Holdings</span>
-              <ChevronDown size={16} className={`transition-transform ${showHoldings ? "rotate-180" : ""}`} />
-            </button>
-            {showHoldings && <HoldingsPanel compact onSellHolding={handleSellHolding} />}
-          </div>
-
-          <div className="mt-6 border-t border-slate-800 pt-4">
-            <ScreenerPanel />
+      <div className="flex min-h-screen flex-col items-stretch lg:flex-row">
+        <aside className="w-full shrink-0 border-b border-slate-800 bg-slate-900/80 p-4 lg:w-80 lg:border-b-0 lg:border-r" aria-label="Search and portfolio">
+          <h2 className="mb-3 text-sm font-semibold text-slate-300">Search instruments</h2>
+          <SearchSuggestions onSelectSymbol={handleSelectSymbol} onOrderRequest={handleOrderRequest} />
+          <button
+            type="button"
+            onClick={() => setShowPortfolio((open) => !open)}
+            aria-expanded={showPortfolio}
+            aria-controls="live-portfolio"
+            className="mb-3 mt-6 flex w-full items-center justify-between rounded-md bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700"
+          >
+            <span>Portfolio / Holdings</span><span aria-hidden="true">{showPortfolio ? "−" : "+"}</span>
+          </button>
+          <div id="live-portfolio">
+            {showPortfolio && <HoldingsPanel compact onSellHolding={handleSellHolding} />}
           </div>
         </aside>
-
-        <main className="min-w-0 flex-1 overflow-auto p-4">
+        <main className="min-w-0 flex-1 p-4">
+          {sessionHealth === "degraded" && (
+            <div role="status" className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+              Kotak did not confirm the session on the last check. Your current login is retained and the app will retry.
+            </div>
+          )}
           <div className="space-y-4">
-            <PaperTradingPanel />
+            <header className="flex items-center justify-between"><div><h1 className="text-xl font-bold">Live trading</h1><p className="text-xs text-slate-400">Real orders · Kotak Neo</p></div><div className="flex gap-4 text-sm"><PaperWorkspaceLink /><button onClick={handleRefresh}>Refresh</button><button onClick={logout}>Logout</button></div></header>
+            
             <WatchlistPanel
               view="indices"
               onSelectStock={handleWatchlistStockClick}
               onOrderRequest={handleOrderRequest}
               onSelectIndex={handleWatchlistIndexClick}
+              onPreviewIndex={previewIndex}
               selectedSymbol={selectedSymbol?.symbol}
             />
 
+            <OrderAcknowledgementStatus />
+            <ManagedTradesPanel />
             <PositionsPanel onExitPosition={handleExitPosition} />
             <OrdersPanel />
 
             {selectedSymbol?.option_chain_symbol && (
-              <OptionChainPanel symbol={selectedSymbol.option_chain_symbol} displayName={selectedSymbol.name} />
+              <OptionChainPanel key={selectedSymbol.option_chain_symbol} symbol={selectedSymbol.option_chain_symbol} displayName={selectedSymbol.name} />
             )}
 
-            <WatchlistPanel
-              view="stocks"
-              onSelectStock={handleWatchlistStockClick}
-              onOrderRequest={handleOrderRequest}
-              onSelectIndex={handleWatchlistIndexClick}
-              selectedSymbol={selectedSymbol?.symbol}
-            />
+
           </div>
         </main>
       </div>

@@ -1,10 +1,17 @@
+import asyncio
+import logging
+import time
+from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from backend.kotak_client import KotakClientError
 from backend.session_manager import get_session_manager
+from backend.managed_live_service import manual_order_guard
 
 router = APIRouter(prefix="/orders", tags=["orders"])
+order_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="broker-order")
+logger = logging.getLogger(__name__)
 
 AMO_TRADE_API_UNAVAILABLE = (
     "Kotak has temporarily disabled AMO placement through Trade APIs. "
@@ -98,7 +105,13 @@ def order_error_status(message: str) -> int:
 
 
 @router.post("/place")
-def place_order(payload: OrderRequest) -> dict:
+async def place_order(payload: OrderRequest) -> dict:
+    queued_at = time.perf_counter()
+    return await asyncio.get_running_loop().run_in_executor(order_executor, _place_order, payload, queued_at)
+
+
+def _place_order(payload: OrderRequest, queued_at: float) -> dict:
+    started_at = time.perf_counter()
     if str(payload.amo or "NO").strip().upper() == "YES":
         raise HTTPException(status_code=503, detail=AMO_TRADE_API_UNAVAILABLE)
     try:
@@ -106,21 +119,28 @@ def place_order(payload: OrderRequest) -> dict:
         client = session_mgr.get_client()
         if not client:
             raise KotakClientError("Kotak session is not active. Please login first.")
-        return client.place_order(
-            exchange_segment=payload.exchange_segment,
-            product=payload.product,
-            order_type=payload.order_type,
-            transaction_type=payload.transaction_type,
-            quantity=payload.quantity,
-            price=payload.price,
-            amo=payload.amo,
-            trading_symbol=payload.trading_symbol,
-            validity=payload.validity,
-            trigger_price=payload.trigger_price,
-            tag=payload.tag,
-            scrip_token=payload.scrip_token,
-        )
-    except KotakClientError as e:
+        with manual_order_guard(client, symbol=payload.trading_symbol):
+            result = client.place_order(
+                exchange_segment=payload.exchange_segment,
+                product=payload.product,
+                order_type=payload.order_type,
+                transaction_type=payload.transaction_type,
+                quantity=payload.quantity,
+                price=payload.price,
+                amo=payload.amo,
+                trading_symbol=payload.trading_symbol,
+                validity=payload.validity,
+                trigger_price=payload.trigger_price,
+                tag=payload.tag,
+                scrip_token=payload.scrip_token,
+            )
+        timing = {
+            "queue_ms": round((started_at - queued_at) * 1000, 1),
+            "broker_ms": round((time.perf_counter() - started_at) * 1000, 1),
+        }
+        logger.info("Order acknowledged: queue_ms=%s broker_ms=%s", timing["queue_ms"], timing["broker_ms"])
+        return {**result, "timing": timing}
+    except (KotakClientError, ValueError) as e:
         raise HTTPException(status_code=order_error_status(str(e)), detail=str(e))
 
 
@@ -147,19 +167,20 @@ def modify_order(payload: ModifyOrderRequest) -> dict:
         validity = str(current_order.get("validity") or payload.validity).strip().upper()
         if validity in {"", "NA", "NONE"}:
             validity = "DAY"
-        result = client.modify_order(
-            order_id=payload.order_id,
-            price=str(payload.price),
-            order_type=str(current_order.get("order_type") or payload.order_type).strip().upper(),
-            quantity=str(payload.quantity),
-            validity=validity,
-            amo=str(current_order.get("amo") or payload.amo).strip().upper(),
-        )
+        with manual_order_guard(client, order_id=payload.order_id):
+            result = client.modify_order(
+                order_id=payload.order_id,
+                price=str(payload.price),
+                order_type=str(current_order.get("order_type") or payload.order_type).strip().upper(),
+                quantity=str(payload.quantity),
+                validity=validity,
+                amo=str(current_order.get("amo") or payload.amo).strip().upper(),
+            )
         error = broker_action_error(result)
         if error:
             raise KotakClientError(f"Modify order failed: {error}")
         return {"order_id": payload.order_id, "result": result}
-    except KotakClientError as e:
+    except (KotakClientError, ValueError) as e:
         raise HTTPException(status_code=order_error_status(str(e)), detail=str(e))
 
 

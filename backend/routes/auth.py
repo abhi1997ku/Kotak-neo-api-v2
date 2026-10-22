@@ -63,12 +63,7 @@ def login(payload: LoginRequest) -> dict:
 def status() -> dict:
     """Check authentication status."""
     session_mgr = get_session_manager()
-
-    return {
-        "status": "authenticated" if session_mgr.is_authenticated() else "not_authenticated",
-        "authenticated": session_mgr.is_authenticated(),
-        "message": "Session is active" if session_mgr.is_authenticated() else "Please login with your TOTP and MPIN",
-    }
+    return session_mgr.status()
 
 
 @router.post("/logout")

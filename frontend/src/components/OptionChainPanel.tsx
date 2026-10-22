@@ -57,7 +57,7 @@ export function OptionChainPanel({ symbol, displayName }: OptionChainPanelProps)
     });
   };
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, isFetching, error } = useQuery({
     queryKey: ["option_chain", symbol, expiry],
     queryFn: async () => {
       if (!symbol) return { chains: [], ltp: 0, symbol: "", expiry: "" };
@@ -68,6 +68,27 @@ export function OptionChainPanel({ symbol, displayName }: OptionChainPanelProps)
     refetchOnMount: "always",
     refetchInterval: false,
   });
+
+  // Warm the other index snapshots once after the selected chain is ready.
+  // Fetch sequentially; no background polling or unused WebSocket subscriptions.
+  const hasChain = Boolean(data?.chains?.length);
+  useEffect(() => {
+    if (!hasChain) return;
+    let stopped = false;
+    const timer = window.setTimeout(async () => {
+      for (const other of ["NIFTY", "BANKNIFTY", "SENSEX"]) {
+        if (stopped) break;
+        if (other === symbol) continue;
+        await queryClient.prefetchQuery({
+          queryKey: ["option_chain", other, ""],
+          queryFn: () => apiClient.getOptionChain(other),
+          staleTime: 60_000,
+          retry: false,
+        });
+      }
+    }, 1500);
+    return () => { stopped = true; window.clearTimeout(timer); };
+  }, [hasChain, queryClient, symbol]);
 
   useEffect(() => {
     setSelectedStrike(null);
@@ -164,7 +185,7 @@ export function OptionChainPanel({ symbol, displayName }: OptionChainPanelProps)
     );
   }
 
-  if (error) {
+  if (error && !data) {
     return (
       <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
         <h3 className="mb-3 text-sm uppercase tracking-wide text-slate-400">Option Chain - {displayName || symbol}</h3>
@@ -202,6 +223,8 @@ export function OptionChainPanel({ symbol, displayName }: OptionChainPanelProps)
           <h3 className="text-sm uppercase tracking-wide text-slate-400">
             Option Chain - {displayName || symbol}
           </h3>
+          {isFetching && <p role="status" className="text-xs text-amber-300">Refreshing snapshot...</p>}
+          {error && <p role="alert" className="text-xs text-red-300">Snapshot refresh failed. Displayed snapshot may be outdated.</p>}
           <p className="text-xs text-slate-500 mt-1">LTP: ₹{ltp.toFixed(2)}</p>
         </div>
         <div className="relative flex items-center gap-3">

@@ -1,57 +1,79 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Play, RefreshCw } from "lucide-react";
-import { apiClient, type ScreenerCandidate } from "../services/api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { stockPaper, type StockIdea, type StockTrade, type SwingConfig } from "../services/stockPaper";
+
+const money = (n: number | null | undefined) => n == null ? "—" : n.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 });
+const number = (n: number | null | undefined) => n == null ? "—" : n.toFixed(2);
+const box = "rounded-lg border border-slate-700 bg-slate-950/60 p-3";
+const input = "rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm";
+
+function Trade({ trade: t }: { trade: StockTrade }) {
+  const open = t.status === "OPEN";
+  const pnl = open ? t.quantity * t.mark + t.dividends - t.cost : t.net_pnl;
+  return <article className={box}>
+    <div className="flex justify-between"><strong>{t.symbol} <span className="text-xs text-slate-400">{t.strategy || "Legacy"}</span></strong><span className="text-xs text-sky-300">{open ? t.pending_exit ? "EXIT SIGNAL · pending next open" : "HOLD" : "EXIT · executed"}</span></div>
+    <div className="mt-3 grid grid-cols-2 gap-2 text-xs lg:grid-cols-4">{[["Entry", money(t.entry)], ["Shares", t.quantity.toLocaleString("en-IN")], ["Initial stop", money(t.initial_stop)], ["Current stop", money(t.stop)], ["Latest mark / exit", money(open ? t.mark : t.exit)], ["Holding sessions", t.sessions ?? "—"], [open ? "Unrealized P&L*" : "Net P&L", money(pnl)], ["Initial planned risk", money(t.planned_risk)]].map(([label, value]) => <div key={String(label)}><p className="text-slate-500">{label}</p><p>{value}</p></div>)}</div>
+    <p className="mt-3 text-xs text-slate-400">Entered {t.entry_date} · {open ? `Marked ${t.mark_date}` : `Exited ${t.exit_date}: ${t.exit_reason || t.status}`}{t.pending_exit && open ? ` · ${t.pending_exit.reason}` : ""}</p>
+  </article>;
+}
+
+const columns: [string, keyof StockIdea][] = [["Symbol", "symbol"], ["Strategy", "strategy"], ["Close", "close"], ["Entry trigger", "entry_trigger"], ["Planned entry", "planned_entry"], ["Initial stop", "initial_stop"], ["Trailing stop", "trailing_stop"], ["Est. risk / share", "risk_per_share"], ["Quantity", "quantity"], ["Capital incl. costs", "capital_required"], ["Potential R/R*", "reward_risk"], ["Relative strength %", "relative_strength"], ["Volume ratio", "volume_ratio"], ["Setup score /100", "score"], ["Entry reasons", "reason"], ["Invalidation", "invalidation"], ["Status", "status"]];
+
+function exportRows(rows: StockIdea[]) {
+  const quote = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const csv = [columns.map(([label]) => quote(label)).join(","), ...rows.map(row => columns.map(([, key]) => quote(row[key])).join(","))].join("\r\n");
+  const url = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a"); a.href = url; a.download = "swing-daily-report.csv"; a.click(); URL.revokeObjectURL(url);
+}
 
 export function ScreenerPanel() {
-  const [mode, setMode] = useState<"synthetic" | "real">("synthetic");
-  const [runMode, setRunMode] = useState<"synthetic" | "real" | null>(null);
-  const [minRr, setMinRr] = useState(2);
-  const { data, isFetching, error, refetch } = useQuery({
-    queryKey: ["screener", runMode, minRr],
-    queryFn: () => apiClient.runScreener(runMode || "synthetic", minRr),
-    enabled: runMode !== null,
-    staleTime: 0,
-  });
-
-  const runScan = () => {
-    setRunMode(mode);
-    void refetch();
-  };
-
-  return (
-    <section className="rounded-xl border border-slate-800 bg-slate-900 p-4">
-      <div className="mb-4 flex flex-col gap-3">
-        <div>
-          <h2 className="text-sm uppercase tracking-wide text-slate-400">Swing trade scanner</h2>
-          <p className="mt-1 text-xs text-slate-500">Ranked setups only. No orders are placed automatically.</p>
-        </div>
-        <div className="grid w-full min-w-0 grid-cols-2 gap-2">
-          <select value={mode} onChange={(event) => setMode(event.target.value as "synthetic" | "real")} className="col-span-2 w-full min-w-0 rounded border border-slate-700 bg-slate-800 px-2 py-2 text-xs text-slate-200">
-            <option value="synthetic">Synthetic test</option>
-            <option value="real">Real market data</option>
-          </select>
-          <label className="flex min-w-0 flex-col gap-1 text-xs text-slate-400"><span>Min R:R</span>
-            <input type="number" min="0.5" step="0.5" value={minRr} onChange={(event) => setMinRr(Math.max(0.5, Number(event.target.value)))} className="w-full min-w-0 rounded border border-slate-700 bg-slate-800 px-2 py-2 text-slate-100" />
-          </label>
-          <button onClick={runScan} disabled={isFetching} className="flex w-full min-w-0 items-center justify-center gap-1 self-end rounded bg-blue-600 px-2 py-2 text-xs font-semibold text-white hover:bg-blue-500 disabled:opacity-60">
-            {isFetching ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
-            Scan
-          </button>
-        </div>
-      </div>
-
-      {error && <div className="rounded bg-red-500/10 p-2 text-xs text-red-300">{error instanceof Error ? error.message : "Scanner failed"}</div>}
-      {data && !data.candidates.length && <div className="text-center text-sm text-slate-500">No setups passed the selected filters.</div>}
-      {data && data.candidates.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead><tr className="border-b border-slate-700 text-left text-slate-400"><th className="px-2 py-2">Symbol</th><th className="px-2 py-2">Setup</th><th className="px-2 py-2">Entry</th><th className="px-2 py-2">Stop</th><th className="px-2 py-2">Target</th><th className="px-2 py-2">R:R</th><th className="px-2 py-2">Qty</th></tr></thead>
-            <tbody>{data.candidates.map((candidate: ScreenerCandidate) => <tr key={`${candidate.symbol}-${candidate.entry}`} className="border-b border-slate-800"><td className="px-2 py-2 font-semibold text-slate-200">{candidate.symbol}</td><td className="px-2 py-2 text-emerald-300">{candidate.setup_type}</td><td className="px-2 py-2">₹{candidate.entry.toFixed(2)}</td><td className="px-2 py-2 text-red-300">₹{candidate.stop.toFixed(2)}</td><td className="px-2 py-2 text-emerald-300">₹{candidate.target.toFixed(2)}</td><td className="px-2 py-2 font-semibold">{candidate.rr.toFixed(2)}</td><td className="px-2 py-2">{candidate.suggested_qty}</td></tr>)}</tbody>
-          </table>
-          <p className="mt-3 text-xs text-slate-500">{data.candidate_count} candidate(s) from {data.mode} data. Review the rationale in the scanner output before trading.</p>
-        </div>
-      )}
-    </section>
-  );
+  const client = useQueryClient();
+  const [tab, setTab] = useState("Daily scan");
+  const [filter, setFilter] = useState("ALL");
+  const [search, setSearch] = useState("");
+  const [scanId, setScanId] = useState(0);
+  const [count, setCount] = useState(50);
+  const [draft, setDraft] = useState<SwingConfig | null>(null);
+  const portfolio = useQuery({ queryKey: ["stock-paper"], queryFn: stockPaper.portfolio, refetchInterval: 5000 });
+  const history = useQuery({ queryKey: ["stock-paper-scans", portfolio.data?.last_scan], queryFn: stockPaper.scans });
+  const past = useQuery({ queryKey: ["stock-paper-history", scanId], queryFn: () => stockPaper.history(scanId), enabled: scanId > 0 });
+  const research = useQuery({ queryKey: ["stock-paper-research"], queryFn: stockPaper.research, enabled: tab === "Backtests" });
+  const config = useQuery({ queryKey: ["stock-paper-config"], queryFn: stockPaper.config, enabled: tab === "Rules & settings" });
+  const scan = useMutation({ mutationFn: stockPaper.scan, onSuccess: () => { void client.invalidateQueries({ queryKey: ["stock-paper"] }); } });
+  const save = useMutation({ mutationFn: stockPaper.saveConfig, onSuccess: value => { setDraft(value); void client.invalidateQueries({ queryKey: ["stock-paper"] }); } });
+  const data = portfolio.data;
+  const report = scanId ? past.data : data?.latest_scan;
+  const rows = report?.stocks.filter(r => (filter === "ALL" || r.status === filter) && `${r.symbol} ${r.company} ${r.strategy}`.toLowerCase().includes(search.toLowerCase())) || [];
+  const active = data?.trades.filter(t => t.status === "OPEN") || [];
+  const closed = data?.trades.filter(t => t.status !== "OPEN") || [];
+  const settings = draft || config.data;
+  const error = portfolio.error || scan.error || past.error || save.error || research.error || config.error;
+  return <section className="rounded-xl border border-slate-800 bg-slate-900 p-4 text-slate-100">
+    <header className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-widest text-emerald-300">Paper only · No broker connection</p><h2 className="mt-1 text-xl font-semibold">Nifty 500 swing research</h2><p className="mt-2 text-sm text-slate-400">Find strong setups. Control portfolio risk. Let trends run.</p></div><button className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold disabled:opacity-50" disabled={scan.isPending || data?.running} onClick={() => scan.mutate()}>{scan.isPending || data?.running ? "Updating cached daily data…" : "Scan & update paper portfolio"}</button></header>
+    <p className="mt-3 text-xs text-slate-400">Completed candles only · Next-session opening entries · No fixed profit target or monthly quota · Setup scores are not win probabilities</p>
+    {error && <p role="alert" className="mt-3 text-rose-300">{error instanceof Error ? error.message : "Could not load data"}</p>}
+    {portfolio.isLoading && <p className="mt-4">Loading saved paper account…</p>}
+    {data && <>
+      {data.error && <p role="alert" className="mt-3 text-sm text-rose-300">Last scan failed: {data.error}. Showing saved data.</p>}
+      {data.warnings.map((w, i) => <p key={i} className="mt-2 text-sm text-amber-300">{w}</p>)}
+      <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">{[["Account equity", money(data.equity)], ["Available cash", money(data.cash)], ["Open stop + gap risk", money(data.open_portfolio_risk)], ["Entries this week", `${data.weekly_entries} / ${data.max_weekly}`], ["Realized net P&L", money(data.realized_pnl)], ["Unrealized P&L*", money(data.unrealized_pnl)], ["Month return (no quota)", `${number(data.month_return_pct)}%`], ["Market regime", report?.regime || "Awaiting scan"]].map(([label, value]) => <div key={label} className={box}><p className="text-xs text-slate-500">{label}</p><p className="mt-1 text-lg">{value}</p></div>)}</div>
+      <p className="mt-3 text-xs text-slate-400">Equity marked through {data.last_session || "—"}. Last scan {data.last_scan ? new Date(data.last_scan).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) + " IST" : "not run"}. Automatic end-of-day updates require the backend to stay running.</p>
+      <nav className="mt-4 flex flex-wrap gap-2" aria-label="Swing workspace">{["Daily scan", "Positions", "History", "Backtests", "Rules & settings"].map(name => <button className={`rounded px-3 py-2 text-sm ${tab === name ? "bg-sky-700" : "bg-slate-800"}`} aria-pressed={tab === name} key={name} onClick={() => setTab(name)}>{name}</button>)}</nav>
+      {tab === "Daily scan" && <div className="mt-4"><div className="flex flex-wrap gap-2"><input className={input} aria-label="Search stocks" placeholder="Symbol, company or strategy" value={search} onChange={e => setSearch(e.target.value)} /><select className={input} aria-label="Status" value={filter} onChange={e => setFilter(e.target.value)}>{["ALL", "BUY CANDIDATE", "HOLD", "EXIT", "WATCH"].map(s => <option key={s}>{s}</option>)}</select><select className={input} aria-label="Historical scan" value={scanId} onChange={e => setScanId(Number(e.target.value))}><option value={0}>Latest scan</option>{history.data?.map(s => <option key={s.id} value={s.id}>#{s.id} · {s.created_at.slice(0, 16)}</option>)}</select><button className={input} onClick={() => exportRows(rows)} disabled={!rows.length}>Export report CSV</button></div>
+        {report && <><p className="mt-3 text-sm text-sky-300">{report.status || "Historical scan"} · {report.available}/{report.requested} stocks with data · {report.bar_date}</p><p className="mt-1 text-xs text-slate-400">{report.source} · Benchmark: {report.benchmark || "Legacy"}. {report.event_data}</p></>}
+        {report?.status === "NO TRADE" && <p className="mt-3 rounded bg-slate-950 p-3 text-sm">No new entry qualifies. Existing positions continue under their own stop and trend rules.</p>}
+        <div className="mt-3 max-h-[38rem] overflow-auto rounded border border-slate-700"><table className="min-w-[2200px] w-full text-left text-xs"><thead className="sticky top-0 bg-slate-800"><tr>{columns.map(([label]) => <th className="p-3" key={label}>{label}</th>)}</tr></thead><tbody>{rows.slice(0, count).map((row, i) => <tr className="border-t border-slate-800" key={`${row.symbol}-${row.strategy}-${i}`}>{columns.map(([, key]) => <td className="max-w-xs p-3" key={key} title={key === "score" ? JSON.stringify(row.score_components) : key === "reward_risk" ? row.reward_risk_note : undefined}>{typeof row[key] === "number" ? number(row[key] as number) : row[key] == null ? "—" : String(row[key])}</td>)}</tr>)}</tbody></table></div>
+        {!rows.length && <p className="mt-3 text-sm text-slate-400">No matching rows. Run a scan to create the first report.</p>}{rows.length > count && <button className={input + " mt-3"} onClick={() => setCount(n => n + 50)}>Show more ({count}/{rows.length})</button>}
+        <p className="mt-3 text-xs text-slate-500">Potential R/R is room to a known historical high, not a profit target or forecast. “—” means no known ceiling. Quantity reserves costs and portfolio risk; the actual opening fill is rechecked. Hover over a score for its components.</p>
+      </div>}
+      {tab === "Positions" && <div className="mt-4 space-y-3"><h3>Open positions · {active.length}/{data.max_open}</h3>{!active.length && <p className="text-sm text-slate-400">No filled positions. Signals are not trades.</p>}{active.map(t => <Trade key={t.id} trade={t} />)}<h3 className="pt-3">Pending entry signals</h3>{data.orders.filter(o => o.status === "QUEUED").map(o => <p className={box + " text-sm"} key={o.id}>{o.symbol} · {o.strategy} · Signal {o.created_date} · Trigger {money(o.entry_trigger)} · Initial stop {money(o.initial_stop || o.stop)} · Next open subject to limits</p>)}<p className="text-xs text-slate-500">*Unrealized P&L excludes future exit costs. Trailing stops may only rise (apart from corporate-action unit adjustments). Gaps can exceed planned risk.</p></div>}
+      {tab === "History" && <div className="mt-4 space-y-3"><a className="text-sky-300 underline" href={stockPaper.exportUrl}>Download full account and scan history (JSON)</a><h3>Closed trades · {closed.length}</h3>{closed.slice().reverse().map(t => <Trade key={t.id} trade={t} />)}<h3>Activity journal</h3><div className="max-h-96 overflow-auto">{data.events.slice().reverse().map((e, i) => <p className="border-b border-slate-800 py-2 text-xs" key={i}>{e.date} · {e.symbol} · <span className="text-sky-300">{e.kind}</span> · {e.detail}</p>)}</div></div>}
+      {tab === "Backtests" && <div className="mt-4 space-y-3"><h3>Chronological strategy comparison</h3><p className="text-xs text-slate-400">Training → validation → later test, with walk-forward and cost stress checks. Selection uses net expectancy and drawdown, not accuracy.</p>{research.isLoading && <p>Loading results…</p>}{research.data?.message && <p>{research.data.message}</p>}{Object.entries(research.data?.strategies || {}).map(([name, result]) => <article className={box} key={name}><h4 className="font-semibold">{name} · {result.config.exit_style} · {result.config.atr_multiple} ATR</h4><p className="mt-1 text-xs text-amber-300">{result.recommendation.replace(/_/g, " ")} · {result.out_of_sample.start} to {result.out_of_sample.end}</p><div className="mt-3 grid grid-cols-2 gap-3 text-sm lg:grid-cols-4">{[["Net return", number(result.out_of_sample.return_pct) + "%"], ["Max drawdown", number(result.out_of_sample.max_drawdown_pct) + "%"], ["Expectancy / trade", money(result.out_of_sample.expectancy_inr)], ["Expectancy R", number(result.out_of_sample.expectancy_r)], ["Win rate", number(result.out_of_sample.win_rate_pct) + "%"], ["Profit factor", number(result.out_of_sample.profit_factor)], ["Closed trades", result.out_of_sample.closed_trades], ["Sharpe (zero Rf)", number(result.out_of_sample.sharpe_zero_rf)]].map(([label, value]) => <p key={String(label)}><span className="block text-xs text-slate-500">{label}</span>{value}</p>)}</div></article>)}{research.data?.protocol?.limitations.map((note, i) => <p className="text-xs text-slate-400" key={i}>• {note}</p>)}</div>}
+      {tab === "Rules & settings" && <div className="mt-4 space-y-4 text-sm"><p>Independent strategies: 20/55-session trend breakout, EMA20 pullback reversal, and volatility-contraction breakout. All require completed candles, trend, volume, positive relative strength versus Nifty 500 and liquidity. Bearish regimes block new entries. Unknown event risk is disclosed and earns no score points.</p><p>Protective structural/ATR stop from entry. Choose Chandelier, swing-low trail or two-close EMA20 reversal. New stops apply next session and never move down. No fixed profit target or forced holding-time exit for new trades. Existing legacy trades retain their original rules.</p><p>Costs include modeled brokerage, STT, stamp duty, exchange/IPFT, SEBI, GST, depository charges and adverse slippage. A 1% gap allowance is included in sizing; actual gaps can be larger. Missing required bars pause replay.</p>
+        {settings && <form onSubmit={e => { e.preventDefault(); save.mutate(settings); }} className="grid grid-cols-2 gap-3 lg:grid-cols-3"><label>Strategy<select className={input + " mt-1 w-full"} value={settings.strategy} onChange={e => setDraft({ ...settings, strategy: e.target.value })}>{["all", "breakout20", "breakout55", "pullback", "contraction"].map(v => <option key={v}>{v}</option>)}</select></label><label>Exit<select className={input + " mt-1 w-full"} value={settings.exit_style} onChange={e => setDraft({ ...settings, exit_style: e.target.value })}>{["chandelier", "swing", "ema"].map(v => <option key={v}>{v}</option>)}</select></label>
+          {[["atr_multiple", "ATR multiple"], ["risk_pct", "Risk fraction (0.005 = 0.5%)"], ["portfolio_risk_pct", "Total risk fraction"], ["min_score", "Minimum score"], ["max_positions", "Maximum positions"], ["max_weekly", "Maximum weekly entries"], ["position_cap", "Per-stock capital fraction"], ["sector_cap", "Sector capital fraction"], ["correlated_cap", "Correlated exposure fraction"], ["correlation_limit", "Correlation threshold"], ["utilization", "Capital utilization fraction"], ["max_stop_pct", "Maximum stop fraction"], ["min_turnover", "Minimum daily turnover ₹"], ["slippage", "Slippage fraction"]].map(([key, label]) => <label key={key}>{label}<input required type="number" min="0" step="any" className={input + " mt-1 w-full"} value={settings[key]} onChange={e => setDraft({ ...settings, [key]: Number(e.target.value) })} /></label>)}<button className="rounded bg-sky-700 p-2 disabled:opacity-50" disabled={save.isPending || data.running}>Save paper settings</button>{save.isSuccess && <p className="text-emerald-300">Saved. Held trades retain their exit configuration.</p>}</form>}
+        <p className="text-xs text-amber-200">Changing settings does not validate them. Backtest new settings before recommending deployment. Current-membership historical tests retain survivorship bias.</p>
+      </div>}
+    </>}
+  </section>;
 }

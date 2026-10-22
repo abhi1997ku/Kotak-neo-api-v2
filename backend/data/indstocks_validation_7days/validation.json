@@ -1,0 +1,66 @@
+{
+  "contract": "BANKNIFTY-Oct2026-FUT",
+  "start_inclusive": "2026-10-10 00:00:00+05:30",
+  "end_exclusive": "2026-10-17 00:00:00+05:30",
+  "requested_days": 7,
+  "total_candles": 1930,
+  "duplicates": 0,
+  "invalid_ohlcv": 0,
+  "outside_requested_window": 0,
+  "unaligned_timestamps": 0,
+  "chronological": true,
+  "coverage": [
+    {
+      "date": "2026-10-10",
+      "bars": 0,
+      "expected_regular_minutes": 0,
+      "missing": 0,
+      "off_session": 0
+    },
+    {
+      "date": "2026-10-11",
+      "bars": 0,
+      "expected_regular_minutes": 0,
+      "missing": 0,
+      "off_session": 0
+    },
+    {
+      "date": "2026-10-12",
+      "bars": 386,
+      "expected_regular_minutes": 375,
+      "missing": 0,
+      "off_session": 11
+    },
+    {
+      "date": "2026-10-13",
+      "bars": 386,
+      "expected_regular_minutes": 375,
+      "missing": 0,
+      "off_session": 11
+    },
+    {
+      "date": "2026-10-14",
+      "bars": 386,
+      "expected_regular_minutes": 375,
+      "missing": 0,
+      "off_session": 11
+    },
+    {
+      "date": "2026-10-15",
+      "bars": 386,
+      "expected_regular_minutes": 375,
+      "missing": 0,
+      "off_session": 11
+    },
+    {
+      "date": "2026-10-16",
+      "bars": 386,
+      "expected_regular_minutes": 375,
+      "missing": 0,
+      "off_session": 11
+    }
+  ],
+  "first": "2026-10-12 09:15:00+05:30",
+  "last": "2026-10-16 15:40:00+05:30",
+  "note": "Weekday regular-session grid for this window. Completeness/internal consistency only, not independent exchange accuracy or one-year retention validation."
+}

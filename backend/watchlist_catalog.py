@@ -1,4 +1,4 @@
-"""Nifty 50 constituents, refreshed from Nifty Indices with a local fallback."""
+"""Nifty 50/500 constituents refreshed from NSE with local fallbacks."""
 
 from __future__ import annotations
 
@@ -14,12 +14,25 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-NIFTY50_CSV_URL = "https://www.niftyindices.com/IndexConstituent/ind_nifty50list.csv"
-NIFTY50_FALLBACK = Path(__file__).resolve().parent / "data" / "nifty50_constituents.csv"
+INDEX_SOURCES = {
+    "nifty50": {
+        "url": "https://www.niftyindices.com/IndexConstituent/ind_nifty50list.csv",
+        "fallback": Path(__file__).resolve().parent / "data" / "nifty50_constituents.csv",
+        "minimum": 40,
+        "label": "Nifty 50",
+    },
+    "nifty500": {
+        "url": "https://nsearchives.nseindia.com/content/indices/ind_nifty500list.csv",
+        "fallback": Path(__file__).resolve().parent / "data" / "nifty500_constituents.csv",
+        "minimum": 450,
+        "label": "Nifty 500",
+    },
+}
 _CACHE_SECONDS = 6 * 60 * 60
 _cache_lock = threading.Lock()
-_constituent_cache: list[dict[str, str]] = []
-_constituent_cache_at = 0.0
+_constituent_cache: dict[str, list[dict[str, str]]] = {}
+_constituent_cache_at: dict[str, float] = {}
+_constituent_sources: dict[str, str] = {}
 
 
 def _parse_constituents(csv_text: str) -> list[dict[str, str]]:
@@ -33,48 +46,63 @@ def _parse_constituents(csv_text: str) -> list[dict[str, str]]:
             {
                 "symbol": symbol,
                 "name": (row.get("Company Name") or symbol).strip(),
+                "industry": (row.get("Industry") or "Unknown").strip(),
                 "isin": (row.get("ISIN Code") or "").strip().upper(),
             }
         )
     return rows
 
 
-def get_nifty50_constituents() -> list[dict[str, str]]:
-    """Return current constituents, falling back to the bundled official snapshot."""
-    global _constituent_cache, _constituent_cache_at
-
+def get_index_constituents(index: str = "nifty50") -> list[dict[str, str]]:
+    """Return the selected official index membership, with bundled fallback."""
+    key = str(index or "nifty50").strip().lower().replace(" ", "")
+    if key not in INDEX_SOURCES:
+        raise ValueError("index must be 'nifty50' or 'nifty500'")
+    config = INDEX_SOURCES[key]
     now = time.monotonic()
-    if _constituent_cache and now - _constituent_cache_at < _CACHE_SECONDS:
-        return list(_constituent_cache)
+    if key in _constituent_cache and now - _constituent_cache_at[key] < _CACHE_SECONDS:
+        return list(_constituent_cache[key])
 
     with _cache_lock:
         now = time.monotonic()
-        if _constituent_cache and now - _constituent_cache_at < _CACHE_SECONDS:
-            return list(_constituent_cache)
+        if key in _constituent_cache and now - _constituent_cache_at[key] < _CACHE_SECONDS:
+            return list(_constituent_cache[key])
 
         try:
-            response = requests.get(NIFTY50_CSV_URL, timeout=5)
+            response = requests.get(config["url"], timeout=8)
             response.raise_for_status()
             constituents = _parse_constituents(response.text)
-            if len(constituents) < 40:
-                raise ValueError("Nifty Indices returned an incomplete Nifty 50 constituent list")
-            _constituent_cache = constituents
-            _constituent_cache_at = time.monotonic()
+            if len(constituents) < config["minimum"]:
+                raise ValueError(f"NSE returned an incomplete {config['label']} constituent list")
+            _constituent_cache[key] = constituents
+            _constituent_cache_at[key] = time.monotonic()
+            _constituent_sources[key] = "NSE/Nifty Indices live constituent file"
             return list(constituents)
         except (requests.RequestException, ValueError, csv.Error) as exc:
-            logger.warning("Could not refresh Nifty 50 constituents; using bundled snapshot: %s", exc)
+            logger.warning("Could not refresh %s constituents; using bundled snapshot: %s", config["label"], exc)
 
         try:
-            constituents = _parse_constituents(NIFTY50_FALLBACK.read_text(encoding="utf-8-sig"))
+            constituents = _parse_constituents(config["fallback"].read_text(encoding="utf-8-sig"))
+            if len(constituents) < config["minimum"]:
+                raise ValueError(f"Bundled {config['label']} constituent list is incomplete")
         except (OSError, ValueError, csv.Error) as exc:
-            logger.exception("Could not load bundled Nifty 50 constituent list")
-            raise RuntimeError("Nifty 50 constituent list is unavailable") from exc
+            logger.exception("Could not load bundled %s constituent list", config["label"])
+            raise RuntimeError(f"{config['label']} constituent list is unavailable") from exc
 
         if not constituents:
-            raise RuntimeError("Bundled Nifty 50 constituent list is empty")
-        _constituent_cache = constituents
-        _constituent_cache_at = time.monotonic()
+            raise RuntimeError(f"Bundled {config['label']} constituent list is empty")
+        _constituent_cache[key] = constituents
+        _constituent_cache_at[key] = time.monotonic()
+        _constituent_sources[key] = f"Bundled {config['label']} constituent snapshot"
         return list(constituents)
+
+
+def get_nifty50_constituents() -> list[dict[str, str]]:
+    return get_index_constituents("nifty50")
+
+
+def get_nifty500_constituents() -> list[dict[str, str]]:
+    return get_index_constituents("nifty500")
 
 
 def _row_values(row: dict[str, Any]) -> set[str]:
@@ -87,10 +115,10 @@ def _row_values(row: dict[str, Any]) -> set[str]:
     return values
 
 
-def match_nifty50_tokens(
+def match_constituent_tokens(
     constituents: list[dict[str, str]], master_rows: list[dict[str, Any]]
 ) -> dict[str, dict[str, str]]:
-    """Match official Nifty symbols to Kotak's current NSE cash-market tokens."""
+    """Match official NSE constituent symbols to Kotak's NSE cash-market tokens."""
     symbols = {item["symbol"] for item in constituents}
     symbol_by_isin = {
         str(item.get("isin") or "").strip().upper(): item["symbol"]
@@ -130,6 +158,13 @@ def match_nifty50_tokens(
                 }
 
     return matches
+
+
+def match_nifty50_tokens(
+    constituents: list[dict[str, str]], master_rows: list[dict[str, Any]]
+) -> dict[str, dict[str, str]]:
+    """Backward-compatible alias; matching works for any NSE constituent set."""
+    return match_constituent_tokens(constituents, master_rows)
 
 
 INDEX_DEFINITIONS = [
@@ -179,5 +214,6 @@ def match_index_tokens(master_rows_by_segment: dict[str, list[dict[str, Any]]]) 
     return matches
 
 
-def constituents_source() -> str:
-    return "Nifty Indices"
+def constituents_source(index: str = "nifty50") -> str:
+    key = str(index or "nifty50").strip().lower().replace(" ", "")
+    return _constituent_sources.get(key, "NSE/Nifty Indices")

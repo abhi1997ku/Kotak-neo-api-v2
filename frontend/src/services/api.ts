@@ -2,12 +2,21 @@
  * API Client for Kotak Neo Backend
  */
 
-const API_BASE_URL = "http://localhost:8001/api";
+import { isResearchWorkspace } from "./workspace";
+export const API_BASE_URL = `http://localhost:${isResearchWorkspace ? 8003 : 8001}/api`;
+
+export interface OrderAcknowledgement {
+  order_id: string;
+  status?: string;
+  timing?: { queue_ms: number; broker_ms: number };
+}
 
 // Types
 export interface Position {
   symbol: string;
+  /** Net quantity in lots for some F&O rows; see order_quantity for contract units. */
   qty: number;
+  /** Kotak order quantity in contract/share units, used for realized-size calculations. */
   order_quantity?: number;
   avg_price: number;
   current_price: number;
@@ -30,6 +39,9 @@ export interface Holding {
   avg_price: number;
   current_price: number;
   value: number;
+  cost_value?: number;
+  pnl?: number;
+  pnl_pct?: number;
   trading_symbol?: string;
   instrument_token?: string;
   exchange_segment?: string;
@@ -44,6 +56,7 @@ export interface Order {
   filled_qty?: number | null;
   unfilled_qty?: number | null;
   price: number;
+  average_fill_price?: number | null;
   order_type: string;
   validity: string;
   amo: "YES" | "NO";
@@ -53,6 +66,7 @@ export interface Order {
 
 export interface Trade {
   trade_id: string;
+  order_id?: string;
   symbol: string;
   side: "BUY" | "SELL";
   qty: number;
@@ -110,17 +124,6 @@ export interface OptionToken {
   instrument_token: string;
 }
 
-export interface ScreenerCandidate {
-  symbol: string;
-  setup_type: string;
-  entry: number;
-  stop: number;
-  target: number;
-  rr: number;
-  suggested_qty: number;
-  rationale: string;
-}
-
 // API Client Class
 class KotakNeoAPI {
   private async request<T>(
@@ -157,8 +160,13 @@ class KotakNeoAPI {
     });
   }
 
-  async getAuthStatus(): Promise<{ authenticated: boolean }> {
-    return this.request<{ authenticated: boolean }>(`/auth/status`, { method: "GET" });
+  async getAuthStatus(): Promise<{
+    authenticated: boolean;
+    session_health?: "active" | "degraded" | "expired" | "not_authenticated";
+    last_session_check_at?: string | null;
+    message?: string;
+  }> {
+    return this.request(`/auth/status`, { method: "GET" });
   }
 
   async logout(): Promise<void> {
@@ -221,8 +229,8 @@ class KotakNeoAPI {
     trigger_price?: number;
     tag?: string;
     scrip_token?: string;
-  }): Promise<{ order_id: string; status?: string }> {
-    return this.request<{ order_id: string; status?: string }>(`/orders/place`, {
+  }): Promise<OrderAcknowledgement> {
+    return this.request<OrderAcknowledgement>(`/orders/place`, {
       method: "POST",
       body: JSON.stringify(orderData),
     });
@@ -235,13 +243,13 @@ class KotakNeoAPI {
     });
   }
 
-  async getWatchlist(): Promise<WatchlistData> {
-    return this.request(`/watchlist/`, { method: "GET" });
+  async getWatchlist(indicesOnly = false): Promise<WatchlistData> {
+    return this.request(`/watchlist/?indices_only=${indicesOnly}`, { method: "GET" });
   }
 
-  createWatchlistStream(): WebSocket {
+  createWatchlistStream(indicesOnly = false): WebSocket {
     const websocketBase = API_BASE_URL.replace(/^http/, "ws");
-    return new WebSocket(`${websocketBase}/watchlist/stream`);
+    return new WebSocket(`${websocketBase}/watchlist/stream?indices_only=${indicesOnly}`);
   }
 
   createOptionChainStream(tokens: OptionToken[]): WebSocket {
@@ -261,6 +269,13 @@ class KotakNeoAPI {
     const websocketBase = API_BASE_URL.replace(/^http/, "ws");
     return new WebSocket(`${websocketBase}/paper-trading/future-stream`);
   }
+
+  async getPaperAgentStatus(): Promise<any> { return this.request(`/paper-trading/status`, { method: "GET" }); }
+  async startPaperAgent(): Promise<any> { return this.request(`/paper-trading/start`, { method: "POST" }); }
+  async stopPaperAgent(): Promise<any> { return this.request(`/paper-trading/stop`, { method: "POST" }); }
+  async getPaperReport(): Promise<any> { return this.request(`/paper-trading/report`, { method: "GET" }); }
+  async getPaperDayAudit(): Promise<any> { return this.request(`/paper-trading/day-audit`, { method: "GET" }); }
+  getPaperReportCsvUrl(): string { return `${API_BASE_URL}/paper-trading/report.csv`; }
 
   async searchSymbol(query: string): Promise<{ results: any[]; message?: string }> {
     const response = await this.request<any>(`/market/search?query=${encodeURIComponent(query)}`, {
@@ -293,9 +308,7 @@ class KotakNeoAPI {
     return this.request(url, { method: "GET" });
   }
 
-  async runScreener(mode: "real" | "synthetic" = "synthetic", minRr = 2): Promise<{ mode: string; candidate_count: number; candidates: ScreenerCandidate[] }> {
-    return this.request(`/screener/scan?mode=${mode}&min_rr=${minRr}`, { method: "GET" });
-  }
+
 }
 
 export const apiClient = new KotakNeoAPI();

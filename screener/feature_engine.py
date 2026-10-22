@@ -6,7 +6,8 @@ from typing import Dict, List, Optional
 import pandas as pd
 
 
-# IMPORTANT: This module intentionally avoids moving averages, RSI, MACD, and Supertrend.
+# IMPORTANT: The original screener signal path avoids moving averages, RSI, MACD, and Supertrend.
+# Optional indicator helpers below serve separate offline experiments only.
 # The signal path uses only price structure, VWAP / anchored VWAP, relative volume,
 # consolidation breakout logic, and ATR for stop / target sizing only.
 
@@ -22,6 +23,12 @@ class SymbolSetup:
     suggested_qty: int
     rationale: str
     volume_confirmation: bool
+    setup_score: int
+    relative_volume: float
+    vwap_confirmation: bool
+    anchored_vwap_confirmation: bool
+    target_1: float
+    target_2: float
     breakout_level: Optional[float] = None
     trend_context: Optional[str] = None
 
@@ -30,6 +37,20 @@ def relative_volume(df: pd.DataFrame, lookback: int = 20) -> pd.Series:
     """Compute 20-day relative volume compared to recent average volume."""
     avg_vol = df["Volume"].rolling(window=lookback, min_periods=lookback).mean()
     return df["Volume"] / avg_vol
+
+
+def adx(df: pd.DataFrame, period: int = 14) -> pd.Series:
+    """Existing research scanner's causal EWM ADX, exposed for offline reuse."""
+    high, low, close = df.High, df.Low, df.Close
+    tr = pd.concat([high-low, (high-close.shift()).abs(), (low-close.shift()).abs()], axis=1).max(axis=1)
+    up, down = high.diff(), -low.diff()
+    positive = up.where((up > down) & (up > 0), 0.0)
+    negative = down.where((down > up) & (down > 0), 0.0)
+    smooth = tr.ewm(alpha=1/period, min_periods=period, adjust=False).mean()
+    plus = 100*positive.ewm(alpha=1/period, min_periods=period, adjust=False).mean()/smooth
+    minus = 100*negative.ewm(alpha=1/period, min_periods=period, adjust=False).mean()/smooth
+    dx = 100*(plus-minus).abs()/(plus+minus).replace(0, float('nan'))
+    return dx.ewm(alpha=1/period, min_periods=period, adjust=False).mean()
 
 
 def vwap(df: pd.DataFrame) -> pd.Series:
@@ -95,8 +116,10 @@ def breakout_signal(df: pd.DataFrame, atr_mult: float = 1.5) -> Dict[str, float 
     recent = detect_consolidation_range(df)
     last_close = float(df["Close"].iloc[-1])
     last_vol = float(df["Volume"].iloc[-1])
-    avg_vol = float(df["Volume"].iloc[-20:].mean()) if len(df) >= 20 else last_vol
-    vol_confirm = last_vol >= (avg_vol * 1.2)
+    prior_volumes = df["Volume"].iloc[-21:-1] if len(df) >= 21 else df["Volume"].iloc[:-1]
+    avg_vol = float(prior_volumes.mean()) if not prior_volumes.empty else 0.0
+    relative_volume_value = last_vol / avg_vol if avg_vol > 0 else 0.0
+    vol_confirm = relative_volume_value >= 1.2
     breakout_level = float(recent["range_high"])
 
     if last_close > breakout_level and vol_confirm:
@@ -104,6 +127,7 @@ def breakout_signal(df: pd.DataFrame, atr_mult: float = 1.5) -> Dict[str, float 
             "signal": "breakout",
             "breakout_level": breakout_level,
             "volume_confirmation": True,
+            "relative_volume": relative_volume_value,
             "trend_context": "uptrend-structure",
             "is_valid": True,
         }
@@ -113,6 +137,7 @@ def breakout_signal(df: pd.DataFrame, atr_mult: float = 1.5) -> Dict[str, float 
             "signal": "breakdown",
             "breakout_level": float(recent["range_low"]),
             "volume_confirmation": True,
+            "relative_volume": relative_volume_value,
             "trend_context": "downtrend-structure",
             "is_valid": True,
         }
@@ -121,6 +146,7 @@ def breakout_signal(df: pd.DataFrame, atr_mult: float = 1.5) -> Dict[str, float 
         "signal": "neutral",
         "breakout_level": breakout_level,
         "volume_confirmation": False,
+        "relative_volume": relative_volume_value,
         "trend_context": "range-constrained",
         "is_valid": False,
     }
@@ -150,25 +176,59 @@ def compute_setup(df: pd.DataFrame, account_risk_pct: float = 0.5, min_rr: float
         return None
 
     risk_per_trade = max(0.0001, account_risk_pct / 100.0)
-    stop_distance = float(max(latest["ATR14"], 0.01))
+    atr_value = latest["ATR14"]
+    if pd.isna(atr_value) or not float(atr_value) > 0:
+        return None
+    stop_distance = float(max(atr_value, 0.01))
     stop = current_close - stop_distance if breakout["signal"] == "breakout" else current_close + stop_distance
-    target = current_close + (stop_distance * 3) if breakout["signal"] == "breakout" else current_close - (stop_distance * 3)
+    direction = 1 if breakout["signal"] == "breakout" else -1
+    range_data = detect_consolidation_range(base)
+    range_height = (
+        max(0.0, float(breakout["breakout_level"]) - float(range_data["range_low"]))
+        if direction > 0
+        else max(0.0, float(range_data["range_high"]) - float(breakout["breakout_level"]))
+    )
+    measured_move = max(0.0, (float(breakout["breakout_level"]) + direction * range_height - current_close) * direction)
+    target_1_distance = max(stop_distance * 2, measured_move * 0.75)
+    target_2_distance = max(stop_distance * 3, measured_move)
+    target_1 = current_close + (direction * target_1_distance)
+    target_2 = current_close + (direction * target_2_distance)
+    target = target_2
 
     rr = abs((target - current_close) / (current_close - stop)) if breakout["signal"] == "breakout" else abs((current_close - target) / (stop - current_close))
     if rr < min_rr:
         return None
 
-    # Suggested qty at 0.5% account risk (configurable) based on stop distance.
+    # VWAP checks contribute to ranking and rationale; the structural breakout
+    # plus volume confirmation remains the signal trigger.
+    vwap_value = latest["VWAP"]
+    anchored_vwap_value = latest["AnchoredVWAP"]
+    vwap_confirmation = bool(pd.notna(vwap_value) and (current_close >= float(vwap_value) if direction > 0 else current_close <= float(vwap_value)))
+    anchored_vwap_confirmation = bool(pd.notna(anchored_vwap_value) and (current_close >= float(anchored_vwap_value) if direction > 0 else current_close <= float(anchored_vwap_value)))
+    relative_volume_value = float(breakout.get("relative_volume", 0.0))
+    volume_points = min(30.0, max(0.0, (relative_volume_value - 1.2) * 20.0))
+    setup_score = int(round(min(100.0, 40.0 + volume_points + 15.0 * vwap_confirmation + 15.0 * anchored_vwap_confirmation)))
+
+    # Suggested quantity uses an INR 100,000 reference account and the selected risk percentage.
     risk_budget = 100000 * risk_per_trade
     risk_per_unit = abs(current_close - stop)
     qty = max(1, int(risk_budget / risk_per_unit)) if risk_per_unit > 0 else 1
 
     setup_type = "breakout" if breakout["signal"] == "breakout" else "breakdown"
+    setup_label = "Breakout" if direction > 0 else "Breakdown"
+    boundary_label = "above" if direction > 0 else "below"
+    vwap_relation = "above" if pd.notna(vwap_value) and current_close >= float(vwap_value) else "below" if pd.notna(vwap_value) else "unavailable"
+    anchored_vwap_relation = "above" if pd.notna(anchored_vwap_value) and current_close >= float(anchored_vwap_value) else "below" if pd.notna(anchored_vwap_value) else "unavailable"
+    vwap_alignment = "aligned" if vwap_confirmation else "not aligned"
+    anchored_vwap_alignment = "aligned" if anchored_vwap_confirmation else "not aligned"
     rationale = (
-        f"Price broke out of a consolidation range with volume confirmation. "
-        f"VWAP support and relative volume are in the favor of the move."
-        if breakout["signal"] == "breakout"
-        else "Price broke down from a consolidation range with volume expansion and no MA signal shortcut used."
+        f"{setup_label} {boundary_label} the prior 20-session range boundary "
+        f"({float(breakout['breakout_level']):.2f}) with volume at {relative_volume_value:.2f}x "
+        f"the prior 20-session average. Price is {vwap_relation} full-history VWAP "
+        f"({vwap_alignment}) and {anchored_vwap_relation} 20-session anchored VWAP "
+        f"({anchored_vwap_alignment}). "
+        "The stop is 1 ATR from entry; targets use the larger of 2R/3R or 0.75x/1x "
+        "of the consolidation measured move."
     )
 
     return SymbolSetup(
@@ -181,6 +241,12 @@ def compute_setup(df: pd.DataFrame, account_risk_pct: float = 0.5, min_rr: float
         suggested_qty=qty,
         rationale=rationale,
         volume_confirmation=bool(breakout["volume_confirmation"]),
+        setup_score=setup_score,
+        relative_volume=relative_volume_value,
+        vwap_confirmation=vwap_confirmation,
+        anchored_vwap_confirmation=anchored_vwap_confirmation,
+        target_1=float(target_1),
+        target_2=float(target_2),
         breakout_level=float(breakout["breakout_level"]),
         trend_context=str(breakout["trend_context"]),
     )

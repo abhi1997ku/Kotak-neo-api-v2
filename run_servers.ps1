@@ -1,10 +1,24 @@
 [CmdletBinding()]
 param(
     [ValidateSet("start", "stop", "restart", "status")]
-    [string]$Action = "start"
+    [string]$Action = "start",
+    [ValidateSet("live", "paper", "all")]
+    [string]$Workspace = "live"
 )
 
 $ErrorActionPreference = "Stop"
+if ($Workspace -eq "all") {
+    $failures = @()
+    foreach ($item in @("live", "paper")) {
+        try {
+            & $PSCommandPath -Action $Action -Workspace $item
+        } catch {
+            $failures += "${item}: $($_.Exception.Message)"
+        }
+    }
+    if ($failures.Count -gt 0) { throw ($failures -join "`n") }
+    return
+}
 $RepoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $FrontendRoot = Join-Path $RepoRoot "frontend"
 $Uvicorn = Join-Path $RepoRoot ".venv\Scripts\uvicorn.exe"
@@ -14,6 +28,18 @@ $FrontendLog = Join-Path $RepoRoot "frontend_server.log"
 $FrontendErrorLog = Join-Path $RepoRoot "frontend_server_error.log"
 $BackendPort = 8001
 $FrontendPort = 5173
+$BackendApp = "backend.live_app:app"
+$UiSuffix = "/"
+if ($Workspace -eq "paper") {
+    $BackendPort = 8003
+    $FrontendPort = 5174
+    $BackendApp = "backend.indstocks_app:app"
+    $UiSuffix = "/?workspace=paper"
+    $BackendLog = Join-Path $RepoRoot "paper_backend_server.log"
+    $BackendErrorLog = Join-Path $RepoRoot "paper_backend_server_error.log"
+    $FrontendLog = Join-Path $RepoRoot "paper_frontend_server.log"
+    $FrontendErrorLog = Join-Path $RepoRoot "paper_frontend_server_error.log"
+}
 
 function Get-PortProcessIds([int]$Port) {
     @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue |
@@ -64,29 +90,48 @@ function Start-Servers {
         Show-Status
         return
     }
-    if ($backendProcesses.Count -gt 0 -or $frontendProcesses.Count -gt 0) {
-        $busyPorts = @()
-        if ($backendProcesses.Count -gt 0) { $busyPorts += $BackendPort }
-        if ($frontendProcesses.Count -gt 0) { $busyPorts += $FrontendPort }
-        throw "Cannot start because port(s) $($busyPorts -join ', ') are already in use. Check status or free those ports first."
+
+    if ($Workspace -eq "paper") {
+        $workers = @(Get-CimInstance Win32_Process | Where-Object {
+            $_.Name -match '^python' -and $_.CommandLine -match ' -m backend\.option_paper' -and
+            $_.CommandLine.Contains($RepoRoot)
+        })
+        if ($workers.Count -eq 0) {
+            Start-Process -FilePath (Join-Path $RepoRoot '.venv\Scripts\python.exe') -ArgumentList '-m','backend.option_paper' -WorkingDirectory $RepoRoot -WindowStyle Hidden -RedirectStandardOutput (Join-Path $RepoRoot 'option_paper.log') -RedirectStandardError (Join-Path $RepoRoot 'option_paper_error.log')
+        }
     }
 
-    Start-Process -FilePath $Uvicorn `
-        -ArgumentList "backend.main:app --host 127.0.0.1 --port $BackendPort" `
-        -WorkingDirectory $RepoRoot `
-        -WindowStyle Hidden `
-        -RedirectStandardOutput $BackendLog `
-        -RedirectStandardError $BackendErrorLog
+    # Serve a production build: no development HMR/page reload during trading.
+    # Separate output folders avoid rebuilding paper assets underneath live tabs.
+    if ($frontendProcesses.Count -eq 0) {
+        Push-Location $FrontendRoot
+        try {
+            & npm.cmd run build -- --outDir "dist-$Workspace"
+            if ($LASTEXITCODE -ne 0) { throw "$Workspace frontend build failed." }
+        } finally { Pop-Location }
+    }
 
-    Start-Process -FilePath "cmd.exe" `
-        -ArgumentList "/c npm run dev -- --host 0.0.0.0 --port $FrontendPort" `
-        -WorkingDirectory $FrontendRoot `
-        -WindowStyle Hidden `
-        -RedirectStandardOutput $FrontendLog `
-        -RedirectStandardError $FrontendErrorLog
+    # Start-Process cannot run in this environment because its inherited
+    # environment has both Path and PATH keys. cmd's start /b avoids that
+    # case-insensitive dictionary failure and keeps both servers detached.
+    $backendCommand = "cd /d `"$RepoRoot`" && start `"Kotak Backend`" /b `"$Uvicorn`" $BackendApp --host 127.0.0.1 --port $BackendPort > `"$BackendLog`" 2> `"$BackendErrorLog`""
+    if ($backendProcesses.Count -eq 0) { cmd.exe /c $backendCommand }
+    $frontendCommand = "cd /d `"$FrontendRoot`" && start `"Kotak Frontend`" /b cmd.exe /c npm run preview -- --host 0.0.0.0 --port $FrontendPort --strictPort --outDir dist-$Workspace > `"$FrontendLog`" 2> `"$FrontendErrorLog`""
+    if ($frontendProcesses.Count -eq 0) { cmd.exe /c $frontendCommand }
+
+    $deadline = (Get-Date).AddSeconds(20)
+    do {
+        $backendReady = (Get-PortProcessIds $BackendPort).Count -gt 0
+        $frontendReady = (Get-PortProcessIds $FrontendPort).Count -gt 0
+        if ($backendReady -and $frontendReady) { break }
+        Start-Sleep -Milliseconds 500
+    } while ((Get-Date) -lt $deadline)
+    if (-not ($backendReady -and $frontendReady)) {
+        throw "$Workspace servers did not start on ports $BackendPort and $FrontendPort. Check $BackendErrorLog and $FrontendErrorLog."
+    }
 
     Write-Host "Servers started." -ForegroundColor Green
-    Write-Host "Frontend: http://localhost:$FrontendPort"
+    Write-Host "Frontend: http://localhost:$FrontendPort$UiSuffix"
     Write-Host "Backend:  http://127.0.0.1:$BackendPort"
     Write-Host "Logs:     $BackendLog and $FrontendLog"
 }

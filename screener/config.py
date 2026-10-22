@@ -12,3 +12,5 @@ class ScreenerConfig:
 
 
 DEFAULT_CONFIG = ScreenerConfig()
+
+

@@ -7,7 +7,10 @@ interface WatchlistPanelProps {
   onSelectStock: (stock: WatchlistItem) => void;
   onOrderRequest: (stock: WatchlistItem, side: "BUY" | "SELL") => void;
   onSelectIndex: (index: WatchlistItem) => void;
+  onPreviewIndex?: (index: WatchlistItem) => void;
   selectedSymbol?: string;
+  readOnly?: boolean;
+  snapshotOnly?: boolean;
   view?: "all" | "indices" | "stocks";
 }
 
@@ -32,20 +35,26 @@ function changeColor(value: number | null | undefined) {
   return value > 0 ? "text-emerald-300" : "text-red-300";
 }
 
-export function WatchlistPanel({ onSelectStock, onOrderRequest, onSelectIndex, selectedSymbol, view = "all" }: WatchlistPanelProps) {
+export function WatchlistPanel({ onSelectStock, onOrderRequest, onSelectIndex, onPreviewIndex, selectedSymbol, view = "all", readOnly = false, snapshotOnly = false }: WatchlistPanelProps) {
   const [filter, setFilter] = useState("");
   const [feedState, setFeedState] = useState("connecting");
   const [marketStatus, setMarketStatus] = useState("");
   const [feedMessage, setFeedMessage] = useState("");
   const queryClient = useQueryClient();
   const { data, isLoading, error } = useQuery({
-    queryKey: ["watchlist"],
-    queryFn: () => apiClient.getWatchlist(),
+    queryKey: snapshotOnly ? ["watchlist-snapshot", view] : ["watchlist", view === "indices"],
+    queryFn: () => apiClient.getWatchlist(view === "indices"),
     staleTime: Infinity,
+    refetchOnMount: snapshotOnly ? "always" : true,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: !snapshotOnly,
+    refetchInterval: false,
+    retry: snapshotOnly ? false : 1,
   });
 
   useEffect(() => {
-    if (view === "stocks") return;
+    if (snapshotOnly) return;
+
     let disposed = false;
     let reconnectTimer: number | undefined;
     let socket: WebSocket | undefined;
@@ -55,7 +64,7 @@ export function WatchlistPanel({ onSelectStock, onOrderRequest, onSelectIndex, s
       if (disposed) return;
       streamFailed = false;
       setFeedState("connecting");
-      socket = apiClient.createWatchlistStream();
+      socket = apiClient.createWatchlistStream(view === "indices");
       socket.onopen = () => setFeedState("connecting");
       socket.onmessage = (message) => {
         let event: any;
@@ -70,18 +79,18 @@ export function WatchlistPanel({ onSelectStock, onOrderRequest, onSelectIndex, s
           if (event.message) setFeedMessage(event.message);
           if (event.state === "live") {
             setFeedMessage("");
-            if (queryClient.getQueryData<WatchlistData>(["watchlist"])?.catalog_warning) {
-              void queryClient.invalidateQueries({ queryKey: ["watchlist"] });
+            if (queryClient.getQueryData<WatchlistData>(["watchlist", view === "indices"])?.catalog_warning) {
+              void queryClient.invalidateQueries({ queryKey: ["watchlist", view === "indices"] });
             }
           }
           if (event.state === "partial") {
-            const current = queryClient.getQueryData<WatchlistData>(["watchlist"]);
+            const current = queryClient.getQueryData<WatchlistData>(["watchlist", view === "indices"]);
             if (
               !current
               || typeof current.stock_token_count !== "number"
               || current.catalog_warning !== event.message
             ) {
-              void queryClient.invalidateQueries({ queryKey: ["watchlist"] });
+              void queryClient.invalidateQueries({ queryKey: ["watchlist", view === "indices"] });
             }
           }
           if (event.state === "unauthorized") {
@@ -97,7 +106,7 @@ export function WatchlistPanel({ onSelectStock, onOrderRequest, onSelectIndex, s
         }
 
         if (event.type === "quote" && typeof event.symbol === "string") {
-          queryClient.setQueryData<WatchlistData>(["watchlist"], (current) => {
+          queryClient.setQueryData<WatchlistData>(["watchlist", view === "indices"], (current) => {
             if (!current) return current;
             const applyTick = (items: WatchlistItem[]) => items.map((item) =>
               item.symbol === event.symbol
@@ -130,7 +139,7 @@ export function WatchlistPanel({ onSelectStock, onOrderRequest, onSelectIndex, s
       if (reconnectTimer !== undefined) window.clearTimeout(reconnectTimer);
       socket?.close();
     };
-  }, [queryClient, view]);
+  }, [queryClient, view, snapshotOnly]);
 
   const visibleStocks = useMemo(() => {
     const query = filter.trim().toLowerCase();
@@ -159,7 +168,7 @@ export function WatchlistPanel({ onSelectStock, onOrderRequest, onSelectIndex, s
             {view === "indices" ? "Market indices" : view === "stocks" ? "Nifty 50 stocks" : "Market watchlist"}
           </h2>
           <p className="mt-1 text-xs text-slate-500">
-            {view === "indices" ? "Nifty 50, Nifty Bank, and Sensex · select an index to open its option chain" : view === "stocks" ? "Live prices for all 50 Nifty 50 constituents" : "Nifty 50, Nifty Bank, Sensex and all 50 Nifty 50 constituents"}
+            {view === "indices" ? "Nifty 50, Nifty Bank, and Sensex · select an index to open its option chain" : view === "stocks" ? (snapshotOnly ? "One-time price snapshot on login or opening this workspace. No live stock feed." : "Live prices for all 50 Nifty 50 constituents") : "Nifty 50, Nifty Bank, Sensex and all 50 Nifty 50 constituents"}
           </p>
         </div>
         {view !== "stocks" && <div className="flex items-center gap-2 text-xs">
@@ -188,6 +197,8 @@ export function WatchlistPanel({ onSelectStock, onOrderRequest, onSelectIndex, s
             key={index.symbol}
             type="button"
             onClick={() => onSelectIndex(index)}
+            onPointerEnter={() => onPreviewIndex?.(index)}
+            onFocus={() => onPreviewIndex?.(index)}
             aria-label={`Open ${index.name} option chain`}
             className={`rounded-lg border p-3 text-left transition-colors hover:border-sky-500/50 hover:bg-slate-900 ${selectedSymbol === index.symbol ? "border-sky-500/60 bg-sky-500/10" : "border-slate-800 bg-slate-950/70"}`}
           >
@@ -236,7 +247,7 @@ export function WatchlistPanel({ onSelectStock, onOrderRequest, onSelectIndex, s
             <tr>
               <th className="px-3 py-2.5">Symbol</th>
               <th className="px-3 py-2.5">Company</th>
-              <th className="px-3 py-2.5 text-right">Live price</th>
+              <th className="px-3 py-2.5 text-right">{snapshotOnly ? "Snapshot price" : "Live price"}</th>
               <th className="px-3 py-2.5 text-right">Change</th>
               <th className="px-3 py-2.5 text-right">%</th>
               <th className="px-3 py-2.5 text-right">Trade</th>
@@ -250,7 +261,7 @@ export function WatchlistPanel({ onSelectStock, onOrderRequest, onSelectIndex, s
                   key={stock.symbol}
                   onClick={() => onSelectStock(stock)}
                   className={`cursor-pointer border-t border-slate-800/80 hover:bg-slate-800/70 ${selected ? "bg-sky-500/10" : ""}`}
-                  title={`Select ${stock.symbol} for an order`}
+                  title={readOnly ? stock.symbol : `Select ${stock.symbol} for an order`}
                 >
                   <td className="px-3 py-2.5 font-semibold text-slate-100">{stock.symbol}</td>
                   <td className="max-w-64 truncate px-3 py-2.5 text-slate-400">{stock.name}</td>
@@ -259,8 +270,8 @@ export function WatchlistPanel({ onSelectStock, onOrderRequest, onSelectIndex, s
                   <td className={`px-3 py-2.5 text-right tabular-nums ${changeColor(stock.change_pct)}`}>{formatChange(stock.change_pct, "%")}</td>
                   <td className="px-3 py-2.5 text-right">
                     <div className="flex justify-end gap-1.5">
-                      <button type="button" onClick={(event) => { event.stopPropagation(); onOrderRequest(stock, "BUY"); }} className="rounded bg-emerald-700/80 px-2 py-1 text-[11px] font-semibold text-white hover:bg-emerald-600">Buy</button>
-                      <button type="button" onClick={(event) => { event.stopPropagation(); onOrderRequest(stock, "SELL"); }} className="rounded bg-red-700/80 px-2 py-1 text-[11px] font-semibold text-white hover:bg-red-600">Sell</button>
+                      <button type="button" disabled={readOnly} style={readOnly ? { display: "none" } : undefined} onClick={(event) => { event.stopPropagation(); onOrderRequest(stock, "BUY"); }} className="rounded bg-emerald-700/80 px-2 py-1 text-[11px] font-semibold text-white hover:bg-emerald-600">Buy</button>
+                      <button type="button" disabled={readOnly} style={readOnly ? { display: "none" } : undefined} onClick={(event) => { event.stopPropagation(); onOrderRequest(stock, "SELL"); }} className="rounded bg-red-700/80 px-2 py-1 text-[11px] font-semibold text-white hover:bg-red-600">Sell</button>
                     </div>
                   </td>
                 </tr>
@@ -272,7 +283,7 @@ export function WatchlistPanel({ onSelectStock, onOrderRequest, onSelectIndex, s
           </tbody>
         </table>
       </div>
-      <p className="mt-2 text-xs text-slate-500">Buy or Sell opens a prefilled order ticket. Prices update from Kotak's live feed during market hours.</p>
+      <p className="mt-2 text-xs text-slate-500">{snapshotOnly ? "Prices stay fixed at the snapshot time shown above; they are not current trading quotes." : readOnly ? "Prices update from Kotak\u0027s live feed during market hours." : "Buy or Sell opens a prefilled order ticket. Prices update from Kotak\u0027s live feed during market hours."}</p>
       </>}
     </section>
   );

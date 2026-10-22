@@ -1,0 +1,2 @@
+# Optional offline model-search dependencies; trading server does not need these.
+scikit-learn==1.8.0

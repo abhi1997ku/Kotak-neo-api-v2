@@ -4,6 +4,7 @@ import json
 import logging
 import re
 import socket
+import threading
 import requests
 from urllib3.util import connection as urllib3_connection
 from six.moves.urllib.parse import urlencode
@@ -36,6 +37,16 @@ class RESTClientObject(object):
         :param configuration: dictionary of configuration parameters
         """
         self.configuration = configuration
+        self._transport = threading.local()
+
+    def _http_session(self):
+        # Sessions retain TCP/TLS connections. Keep mutable session/cookie state
+        # local to each worker rather than sharing it between concurrent requests.
+        if not hasattr(self._transport, "session"):
+            session = requests.Session()
+            session.mount("https://", requests.adapters.HTTPAdapter(max_retries=0))
+            self._transport.session = session
+        return self._transport.session
 
     def request(self, method, url, query_params=None, headers=None,
                 body=None):
@@ -68,19 +79,19 @@ class RESTClientObject(object):
                     request_body = None
                     if body is not None:
                         request_body = json.dumps(body)
-                    response = requests.post(url=url, headers=headers, data=request_body, timeout=15)
+                    response = self._http_session().post(url=url, headers=headers, data=request_body, timeout=15)
                 elif re.search('x-www-form-urlencoded', headers['Content-Type'], re.IGNORECASE):
                     request_body = {}
                     if body is not None:
                         request_body["jData"] = json.dumps(body)
-                    response = requests.post(url=url, headers=headers, data=request_body, timeout=15)
+                    response = self._http_session().post(url=url, headers=headers, data=request_body, timeout=15)
                 else:
                     msg = """In-Valid Content-Type in the Header Parameters"""
                     raise ApiException(status=0, reason=msg)
             elif method in ['GET']:
                 if query_params:
                     url += '?' + urlencode(query_params)
-                response = requests.get(url=url, headers=headers, timeout=15)
+                response = self._http_session().get(url=url, headers=headers, timeout=15)
             else:
                 msg = """Cannot call the API with the provided HTTP Method"""
                 raise ApiException(status=0, reason=msg)

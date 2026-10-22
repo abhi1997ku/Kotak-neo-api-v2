@@ -14,6 +14,8 @@ __pycache__/
 # Frontend dependencies and build output
 frontend/node_modules/
 frontend/dist/
+frontend/dist-live/
+frontend/dist-paper/
 *.tsbuildinfo
 
 # Local logs and application databases
@@ -21,6 +23,10 @@ frontend/dist/
 *.db
 *.sqlite
 *.sqlite3
+backend/data/indstocks_*.json
+backend/data/indstocks_*.tmp
+screener/index_research_cache/
+screener/training_data/
 
 # OS files
 .DS_Store

@@ -1,7 +1,9 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, useRef, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { apiClient } from "../services/api";
+import { managedTrades } from "../services/managedTrades";
+import { isResearchWorkspace } from "../services/workspace";
 
 export interface OrderTicketRequest {
   symbol: string;
@@ -26,6 +28,7 @@ interface OrderTicketModalProps {
 
 export function OrderTicketModal({ ticket, onClose }: OrderTicketModalProps) {
   const queryClient = useQueryClient();
+  const submitting = useRef(false);
   const [side, setSide] = useState<"BUY" | "SELL">(ticket.side);
   const [quantity, setQuantity] = useState(String(ticket.quantity || 1));
   const [product, setProduct] = useState(ticket.product || (ticket.exchangeSegment.endsWith("_fo") ? "NRML" : "CNC"));
@@ -33,11 +36,19 @@ export function OrderTicketModal({ ticket, onClose }: OrderTicketModalProps) {
   const [price, setPrice] = useState(ticket.limitPrice ? String(ticket.limitPrice) : "");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [managed, setManaged] = useState(false);
+  const [targetTrigger, setTargetTrigger] = useState("");
+  const [targetLimit, setTargetLimit] = useState("");
+  const [stopTrigger, setStopTrigger] = useState("");
+  const [stopLimit, setStopLimit] = useState("");
+  const managedRequest = useRef({ signature: "", id: "" });
+  const canManage = !isResearchWorkspace && !ticket.isExit && !ticket.isHoldingSale && Boolean(ticket.instrumentToken)
+    && ticket.exchangeSegment === "nse_fo";
 
   const { data: quoteData } = useQuery({
     queryKey: ["order-ticket-quote", ticket.exchangeSegment, ticket.instrumentToken],
     queryFn: () => apiClient.getQuotes([ticket.instrumentToken!], ticket.exchangeSegment),
-    enabled: Boolean(ticket.instrumentToken),
+    enabled: Boolean(ticket.instrumentToken) && !isSubmitting,
     refetchInterval: ticket.instrumentToken ? 5000 : false,
   });
   const quoteLtp = Number(quoteData?.quotes?.[0]?.ltp || 0);
@@ -57,6 +68,7 @@ export function OrderTicketModal({ ticket, onClose }: OrderTicketModalProps) {
 
   const submitOrder = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (submitting.current) return;
     const quantityValue = Number(quantity);
     const priceValue = Number(price);
     if (!Number.isInteger(quantityValue) || quantityValue < 1) {
@@ -76,10 +88,32 @@ export function OrderTicketModal({ ticket, onClose }: OrderTicketModalProps) {
       return;
     }
 
+    submitting.current = true;
     setIsSubmitting(true);
     setMessage("");
+    const submittedAt = performance.now();
     try {
-      await apiClient.placeOrder({
+      if (managed) {
+        if (!canManage || side !== "BUY" || !["MIS", "NRML"].includes(product)) throw new Error("Managed entries require a BUY option and MIS or NRML product.");
+        const payload = {
+          symbol: ticket.tradingSymbol, instrument_token: ticket.instrumentToken!,
+          exchange_segment: ticket.exchangeSegment as "nse_fo" | "bse_fo", product: product as "MIS" | "NRML",
+          side, quantity: quantityValue, entry_type: orderType, entry_limit: orderType === "L" ? priceValue : undefined,
+          target_trigger: Number(targetTrigger), target_limit: Number(targetLimit),
+          stop_trigger: Number(stopTrigger), stop_limit: Number(stopLimit),
+        };
+        if (![payload.target_trigger, payload.target_limit, payload.stop_trigger, payload.stop_limit].every(value => Number.isFinite(value) && value > 0)) throw new Error("Enter all four trigger and limit prices.");
+        const signature = JSON.stringify(payload);
+        if (managedRequest.current.signature !== signature) managedRequest.current = { signature, id: crypto.randomUUID() };
+        const result = await managedTrades.create({ ...payload, request_id: managedRequest.current.id });
+        void queryClient.invalidateQueries({ queryKey: ["managed-trades"] });
+        void queryClient.invalidateQueries({ queryKey: ["orders"] });
+        void queryClient.invalidateQueries({ queryKey: ["positions"] });
+        if (result.state === "ENTRY_UNKNOWN") { setMessage(result.note); return; }
+        onClose();
+        return;
+      }
+      const acknowledgement = await apiClient.placeOrder({
         exchange_segment: ticket.exchangeSegment,
         product,
         order_type: orderType,
@@ -92,12 +126,16 @@ export function OrderTicketModal({ ticket, onClose }: OrderTicketModalProps) {
         validity: "DAY",
         tag: ticket.isHoldingSale ? "holding-sell" : ticket.isExit ? `exit-${side.toLowerCase()}` : `terminal-${side.toLowerCase()}`,
       });
-      await Promise.all([
+      queryClient.setQueryData(["last-order-ack"], {
+        ...acknowledgement,
+        total_ms: Math.round(performance.now() - submittedAt),
+      });
+      void Promise.all([
         queryClient.invalidateQueries({ queryKey: ["orders"] }),
         queryClient.invalidateQueries({ queryKey: ["positions"] }),
         queryClient.invalidateQueries({ queryKey: ["holdings"] }),
         queryClient.invalidateQueries({ queryKey: ["trade-book"] }),
-      ]);
+      ]).catch(() => {});
       onClose();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Order submission failed.";
@@ -109,6 +147,7 @@ export function OrderTicketModal({ ticket, onClose }: OrderTicketModalProps) {
         setMessage(errorMessage);
       }
     } finally {
+      submitting.current = false;
       setIsSubmitting(false);
     }
   };
@@ -124,12 +163,12 @@ export function OrderTicketModal({ ticket, onClose }: OrderTicketModalProps) {
         aria-modal="true"
         aria-labelledby="order-ticket-title"
         onSubmit={submitOrder}
-        className="w-full max-w-md overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl"
+        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl border border-slate-700 bg-slate-900 shadow-2xl"
       >
         <div className="flex items-start justify-between border-b border-slate-800 px-5 py-4">
           <div>
             <h2 id="order-ticket-title" className="text-base font-semibold text-slate-100">
-              {ticket.isHoldingSale ? "Sell holding" : ticket.isExit ? "Exit position" : "Place order"}
+              {managed ? "Live managed trade - real orders" : ticket.isHoldingSale ? "Sell holding" : ticket.isExit ? "Exit position" : "Place order"}
             </h2>
             <p className="mt-1 text-sm text-slate-400">{ticket.symbol}</p>
           </div>
@@ -180,8 +219,21 @@ export function OrderTicketModal({ ticket, onClose }: OrderTicketModalProps) {
             )}
           </div>
 
+          {canManage && <fieldset disabled={isSubmitting} className="space-y-3 rounded-lg border border-amber-500/30 p-3">
+            <label className="flex items-center gap-2 text-sm text-amber-200"><input type="checkbox" checked={managed} onChange={event => setManaged(event.target.checked)} />Live target & stop - real orders</label>
+            {managed && <>
+              <p className="text-xs text-slate-400">Buy one lot of a Nifty/Bank Nifty option. Entry goes to Kotak; local premium triggers submit one real limit exit. Quantity is in contract units. Keep the backend and connection running.</p>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  ["Profit trigger", targetTrigger, setTargetTrigger], ["Profit limit", targetLimit, setTargetLimit],
+                  ["Stop trigger", stopTrigger, setStopTrigger], ["Stop limit", stopLimit, setStopLimit],
+                ] as const).map(([label, value, setter]) => <label key={label} className="text-xs text-slate-400">{label}<input required type="number" min="0.01" step="0.01" value={value} onChange={event => setter(event.target.value)} className="mt-1 w-full rounded border border-slate-700 bg-slate-800 p-2 text-slate-100" /></label>)}
+              </div>
+              <p className="text-xs text-amber-200">An unfilled exit keeps your limit; the other trigger stays disabled. Backend or feed outages stop local trigger detection.</p>
+            </>}
+          </fieldset>}
           {(ticket.isExit || ticket.isHoldingSale) && ticket.maxQuantity && quantity && Number(quantity) < ticket.maxQuantity && (
-            <p className="text-xs text-slate-500">Partial sale · {ticket.maxQuantity - Number(quantity)} units will remain.</p>
+            <p className="text-xs text-slate-500">Partial sale - {ticket.maxQuantity - Number(quantity)} units will remain.</p>
           )}
           {orderType === "MKT" && ltp > 0 && <p className="text-xs text-slate-500">Estimated value: &#8377;{(ltp * Number(quantity || 0)).toFixed(2)}</p>}
           <p className="text-xs text-slate-500">After-market orders are currently unavailable through this terminal.</p>
@@ -191,7 +243,9 @@ export function OrderTicketModal({ ticket, onClose }: OrderTicketModalProps) {
         <div className="flex gap-2 border-t border-slate-800 px-5 py-4">
           <button type="button" onClick={onClose} disabled={isSubmitting} className="flex-1 rounded-lg border border-slate-700 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50">Cancel</button>
           <button type="submit" disabled={isSubmitting} className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50 ${side === "BUY" ? "bg-emerald-600 hover:bg-emerald-500" : "bg-red-600 hover:bg-red-500"}`}>
-            {isSubmitting ? "Sending…" : `${ticket.isHoldingSale ? "Sell" : ticket.isExit ? "Exit" : side} ${ticket.symbol}`}
+            {managed ? (isSubmitting ? "Submitting managed entry..." : "Buy with live target & stop") : <>
+            {isSubmitting ? "Sending..." : `${ticket.isHoldingSale ? "Sell" : ticket.isExit ? "Exit" : side} ${ticket.symbol}`}
+            </>}
           </button>
         </div>
       </form>

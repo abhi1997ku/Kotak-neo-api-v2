@@ -34,6 +34,14 @@ class ScreenerResult:
     rr: float
     suggested_qty: int
     rationale: str
+    setup_score: int
+    relative_volume: float
+    vwap_confirmation: bool
+    anchored_vwap_confirmation: bool
+    target_1: float
+    target_2: float
+    current_ltp: float | None = None
+    signal_generated_at: str | None = None
 
 
 def rank_candidates(frames: dict[str, pd.DataFrame], min_rr: float = 2.0) -> List[ScreenerResult]:
@@ -53,9 +61,15 @@ def rank_candidates(frames: dict[str, pd.DataFrame], min_rr: float = 2.0) -> Lis
                 rr=setup.rr,
                 suggested_qty=setup.suggested_qty,
                 rationale=setup.rationale,
+                setup_score=setup.setup_score,
+                relative_volume=setup.relative_volume,
+                vwap_confirmation=setup.vwap_confirmation,
+                anchored_vwap_confirmation=setup.anchored_vwap_confirmation,
+                target_1=setup.target_1,
+                target_2=setup.target_2,
             )
         )
-    return sorted(results, key=lambda x: x.rr, reverse=True)
+    return sorted(results, key=lambda x: (x.setup_score, x.rr), reverse=True)
 
 
 def synthetic_universe() -> dict[str, pd.DataFrame]:
@@ -135,8 +149,8 @@ def real_universe(days: int = 100) -> dict[str, pd.DataFrame]:
     data_dict = fetch_data_batch(symbols, days=days)
     
     if not data_dict:
-        logger.warning("No data fetched. Falling back to synthetic data.")
-        return synthetic_universe()
+        logger.warning("No real data fetched; returning no candidates instead of synthetic data.")
+        return {}
     
     logger.info(f"Successfully fetched {len(data_dict)} symbols")
     return data_dict
