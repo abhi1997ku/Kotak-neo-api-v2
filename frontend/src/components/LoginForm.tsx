@@ -34,7 +34,6 @@ export function LoginForm() {
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-slate-100">Kotak Neo Terminal</h1>
           <p className="mt-2 text-sm text-slate-400">Personal Trading Dashboard</p>
-          <a href="#stock-paper" className="mt-4 inline-block text-sm text-emerald-300 underline">Open stock paper portfolio — no broker login</a>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

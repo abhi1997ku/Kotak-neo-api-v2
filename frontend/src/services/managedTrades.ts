@@ -17,6 +17,7 @@ export interface ManagedTradeRequest {
 }
 
 export interface ManagedTrade extends ManagedTradeRequest {
+  edit_revision?: number;
   state: string;
   note: string;
   selected_leg: "target" | "stop" | "manual" | null;
@@ -46,6 +47,7 @@ async function request<T>(path: string, body?: unknown): Promise<T> {
 }
 
 export const managedTrades = {
+  edit: (id: string, payload: { revision: number; target_trigger: number; target_limit: number; stop_trigger: number; stop_limit: number }) => request<ManagedTrade>(`/${encodeURIComponent(id)}/edit`, payload),
   list: () => request<{ trades: ManagedTrade[]; feed_state: string; order_feed_state: string; error: string; live_execution_enabled: true }>(""),
   create: (payload: ManagedTradeRequest) => request<ManagedTrade>("/live", payload),
   action: (id: string, action: "reconcile" | "exit" | "release") => request<ManagedTrade>(`/${encodeURIComponent(id)}/${action}`, {}),

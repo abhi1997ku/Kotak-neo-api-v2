@@ -9,9 +9,10 @@ import pandas as pd
 from backend.indstocks_data import client, INDstocksError
 from backend.indstocks_monitor import ROOT, refresh_master, resolve_future, observe
 from backend.option_paper_store import load_state, save_state
+from backend.order_block_strategy import STRATEGY, PARAMS, eligible
 
-STATE = ROOT / "ema9_option_paper.json"
-JOURNAL = ROOT / "ema9_option_paper.sqlite"
+STATE = ROOT / "ob_option_paper.json"
+JOURNAL = ROOT / "ob_option_paper.sqlite"
 
 
 def execution_event(state: dict, key: str, reason: str, now: pd.Timestamp) -> None:
@@ -94,6 +95,7 @@ def process(state: dict, setups: list[dict], snapshot: dict, rows: list[dict], n
     future = float(data[future_code]["live_price"])
     if not math.isfinite(future) or future <= 0:
         raise ValueError("INVALID_UNDERLYING")
+    setups = eligible(state, setups, now, execution_event)
     position = state.get("position")
     if position:
         latch_exit(position, future, now)
@@ -129,12 +131,8 @@ def process(state: dict, setups: list[dict], snapshot: dict, rows: list[dict], n
             execution_event(state, key, 'INVALIDATED_BEFORE_ENTRY', now)
             state["seen"].append(key)
             continue
-        if sign*(future-setup["entry"]) < 0:
+        if sign*(future-setup["entry"]) > 0:
             execution_event(state, key, 'WAITING_ENTRY_TRIGGER', now)
-            continue
-        if sign*(setup["target"]-future) <= 0:
-            execution_event(state, key, 'TARGET_ALREADY_PASSED', now)
-            state["seen"].append(key)
             continue
         spot = float(data["NIDX_40000003"]["live_price"])
         if not math.isfinite(spot) or spot <= 0:
@@ -149,11 +147,18 @@ def process(state: dict, setups: list[dict], snapshot: dict, rows: list[dict], n
         except ValueError as exc:
             execution_event(state, key, str(exc), now)
             continue
-        state["position"] = {**setup, **contract, "entered_at": now.isoformat(), "premium": premium,
+        actual_risk = sign*(future-setup["stop"])
+        state["position"] = {**setup, **contract, "risk": actual_risk,
+            "target": future+sign*PARAMS.target_r*actual_risk, "strategy": STRATEGY, "entered_at": now.isoformat(), "premium": premium,
             "underlying_fill": future, "entry_snapshot": snapshot, "result": "OPEN_ESTIMATE",
             "quote_basis": "LOCAL_RECEIPT_UNVERIFIED_EXCHANGE_TIME", "gross_pnl": None,
             "costs_included": False, "mark_stale": True}
-        state["seen"].append(key)
+        for candidate in setups:
+            candidate_key = candidate['timestamp']+':'+candidate['side']
+            if candidate_key not in state['seen']:
+                state['seen'].append(candidate_key)
+            if candidate_key != key:
+                execution_event(state, candidate_key, 'CANCELLED_ON_FILL', now)
         execution_event(state, key, 'FILLED', now)
         state.pop("needed_option", None)
         return
@@ -162,7 +167,7 @@ def process(state: dict, setups: list[dict], snapshot: dict, rows: list[dict], n
 def main() -> None:
     """Run independent paper estimates; recover open positions after process restart."""
     ROOT.mkdir(exist_ok=True)
-    guard = sqlite3.connect(ROOT/"ema9_option_paper_lock.sqlite", timeout=0)
+    guard = sqlite3.connect(ROOT/"ob_option_paper_lock.sqlite", timeout=0)
     guard.execute("CREATE TABLE IF NOT EXISTS lock(id INTEGER)")
     guard.commit()
     guard.execute("BEGIN EXCLUSIVE")
@@ -193,25 +198,16 @@ def main() -> None:
                 elif ticks.code != state['future_code']:
                     raise ValueError('STREAM_CONTRACT_CHANGED_RESTART_REQUIRED')
                 if time.monotonic()-last_observe >= 60 and not state.get("position"):
-                    monitor_state = observe(ROOT/"indstocks_ema9_observations.sqlite", now)
+                    monitor_state = observe(ROOT/"indstocks_ob_observations.sqlite", now)
                     state["current_session_bars"] = monitor_state["today_bars"]
                     monitor_state["mode"] = "option-paper-estimates"
                     monitor_state["fill_blocker"] = None
-                    status_tmp = ROOT/"indstocks_ema9_status.tmp"
+                    status_tmp = ROOT/"indstocks_ob_status.tmp"
                     status_tmp.write_text(json.dumps(monitor_state))
-                    status_tmp.replace(ROOT/"indstocks_ema9_status.json")
+                    status_tmp.replace(ROOT/"indstocks_ob_status.json")
                     last_observe = time.monotonic()
-                with sqlite3.connect(ROOT/"indstocks_ema9_observations.sqlite") as db:
+                with sqlite3.connect(ROOT/"indstocks_ob_observations.sqlite") as db:
                     setups = [json.loads(x[0]) for x in db.execute("SELECT payload FROM observations WHERE accepted=1 ORDER BY timestamp")]
-                for setup in setups:
-                    key = setup['timestamp']+':'+setup['side']
-                    if key in state['seen'] or pd.Timestamp(setup['timestamp']) > now:
-                        continue
-                    if now >= pd.Timestamp(setup['valid_until']):
-                        execution_event(state, key, 'ENTRY_EXPIRED', now)
-                        state['seen'].append(key)
-                    elif state.get('position'):
-                        execution_event(state, key, 'POSITION_ALREADY_OPEN', now)
                 codes = [state["future_code"], "NIDX_40000003"]
                 if state.get("position"):
                     codes.append(state["position"]["code"])
@@ -254,7 +250,8 @@ def main() -> None:
             if state.get("position"):
                 state["position"].update(data_gap=True, mark_stale=True)
         state.update(checked_at=now.isoformat(), orders_enabled=False, estimates_only=True)
-        state['execution_version'] = 'stream-triggers-v2'
+        state['execution_version'] = 'ob-midpoint-v1'
+        state['strategy'] = STRATEGY
         # A journal failure stops this worker before it can simulate another fill.
         save_state(JOURNAL, state)
         temporary = STATE.with_suffix(".tmp")

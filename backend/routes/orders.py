@@ -1,9 +1,10 @@
 import asyncio
 import logging
+import math
 import time
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from backend.kotak_client import KotakClientError
 from backend.session_manager import get_session_manager
@@ -32,6 +33,20 @@ class OrderRequest(BaseModel):
     trigger_price: float | None = None
     tag: str | None = None
     scrip_token: str | None = None
+
+    @model_validator(mode="after")
+    def validate_sl_limit(self):
+        if self.order_type == "SL":
+            if any(value is None or not math.isfinite(value) or value <= 0 for value in (self.price, self.trigger_price)):
+                raise ValueError("SL Limit requires positive, finite limit and trigger prices.")
+            side = self.transaction_type.upper()
+            if side not in {"BUY", "B", "SELL", "S"}:
+                raise ValueError("SL Limit requires a BUY or SELL side.")
+            if side in {"SELL", "S"} and self.price > self.trigger_price:
+                raise ValueError("Sell SL limit must be at or below the trigger.")
+            if side in {"BUY", "B"} and self.price < self.trigger_price:
+                raise ValueError("Buy SL limit must be at or above the trigger.")
+        return self
 
 
 class ModifyOrderRequest(BaseModel):

@@ -67,8 +67,9 @@ def test_tick_crossing_survives_rebound_and_missing_depth():
 
 
 def test_entry_expiry_is_audited():
+    from backend.order_block_strategy import STRATEGY
     now = pd.Timestamp('2026-10-21 10:01', tz='Asia/Kolkata')
-    setup = {'timestamp': '2026-10-21T09:55:00+05:30', 'valid_until': '2026-10-21T10:00:00+05:30', 'side': 'short'}
+    setup = {'strategy': STRATEGY, 'timestamp': '2026-10-21T09:55:00+05:30', 'valid_until': '2026-10-21T10:00:00+05:30', 'side': 'short'}
     state = {'position': None, 'trades': [], 'seen': [], 'started_at': '2026-10-21T09:00:00+05:30', 'future_code': 'F'}
     process(state, [setup], {'received_at': now.isoformat(), 'data': {'F': {'live_price': 100}}}, [], now)
     assert state['execution_events'][0]['reason'] == 'ENTRY_EXPIRED'

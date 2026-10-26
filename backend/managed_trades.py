@@ -34,19 +34,36 @@ class ManagedTradeRequest(BaseModel):
         if self.entry_type == "L" and self.entry_limit is None:
             raise ValueError("Limit entries require an entry price.")
         if self.side == "BUY":
-            valid = self.stop_trigger < self.target_trigger and self.stop_limit <= self.stop_trigger and self.target_limit <= self.target_trigger
-            if self.entry_type == "L":
-                valid = valid and self.stop_trigger < self.entry_limit < self.target_trigger
+            if self.target_limit > self.target_trigger:
+                raise ValueError(f"Profit limit ({self.target_limit:.2f}) must be at or below Profit trigger ({self.target_trigger:.2f}) for a BUY trade. Lower Profit limit or raise Profit trigger.")
+            if self.stop_limit > self.stop_trigger:
+                raise ValueError(f"Stop limit ({self.stop_limit:.2f}) must be at or below Stop trigger ({self.stop_trigger:.2f}) for a BUY trade. Lower Stop limit or raise Stop trigger.")
+            if self.stop_trigger >= self.target_trigger:
+                raise ValueError("Stop trigger must be below Profit trigger for a BUY trade.")
+            if self.entry_type == "L" and not self.stop_trigger < self.entry_limit < self.target_trigger:
+                raise ValueError(f"Entry limit ({self.entry_limit:.2f}) must be above Stop trigger ({self.stop_trigger:.2f}) and below Profit trigger ({self.target_trigger:.2f}) for a BUY trade.")
         else:
-            valid = self.target_trigger < self.stop_trigger and self.stop_limit >= self.stop_trigger and self.target_limit >= self.target_trigger
-            if self.entry_type == "L":
-                valid = valid and self.target_trigger < self.entry_limit < self.stop_trigger
-        if not valid:
-            raise ValueError("Check trigger ordering and executable exit limits for the selected side.")
+            if self.target_limit < self.target_trigger:
+                raise ValueError(f"Profit limit ({self.target_limit:.2f}) must be at or above Profit trigger ({self.target_trigger:.2f}) for a SELL trade. Raise Profit limit or lower Profit trigger.")
+            if self.stop_limit < self.stop_trigger:
+                raise ValueError(f"Stop limit ({self.stop_limit:.2f}) must be at or above Stop trigger ({self.stop_trigger:.2f}) for a SELL trade. Raise Stop limit or lower Stop trigger.")
+            if self.target_trigger >= self.stop_trigger:
+                raise ValueError("Profit trigger must be below Stop trigger for a SELL trade.")
+            if self.entry_type == "L" and not self.target_trigger < self.entry_limit < self.stop_trigger:
+                raise ValueError(f"Entry limit ({self.entry_limit:.2f}) must be above Profit trigger ({self.target_trigger:.2f}) and below Stop trigger ({self.stop_trigger:.2f}) for a SELL trade.")
         return self
 
 
 TERMINAL = {"CLOSED", "CANCELLED"}
+
+
+class ManagedTradeEdit(BaseModel):
+    model_config = {"extra": "forbid"}
+    revision: int = Field(ge=0, strict=True)
+    target_trigger: float = Field(gt=0, allow_inf_nan=False)
+    target_limit: float = Field(gt=0, allow_inf_nan=False)
+    stop_trigger: float = Field(gt=0, allow_inf_nan=False)
+    stop_limit: float = Field(gt=0, allow_inf_nan=False)
 
 
 class PreviewStore:

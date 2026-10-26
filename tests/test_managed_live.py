@@ -4,6 +4,7 @@ import time
 import pytest
 
 from backend.managed_live import LiveManager
+from backend.managed_trades import ManagedTradeEdit
 from tests.test_managed_trades import request
 
 
@@ -54,6 +55,63 @@ def setup(tmp_path):
 
 def trigger(manager, broker, price=110):
     manager.tick(broker, price, time.time())
+
+
+def edit_prices(**changes):
+    return ManagedTradeEdit(**dict({"revision": 0, "target_trigger": 120, "target_limit": 119,
+                                   "stop_trigger": 96, "stop_limit": 95}, **changes))
+
+
+@pytest.mark.parametrize("segment", ["nse_fo", "bse_fo"])
+def test_edit_pending_and_armed_preserves_quantity_and_original_request(setup, segment):
+    m, b = setup
+    original = m.create(request(quantity=150, exchange_segment=segment), b)["request"]
+    row = m.edit("preview-123", edit_prices(), b, {"ltp": 100, "received_at": time.time()})
+    assert row["quantity"] == 150 and row["request"] == original
+    assert len(b.calls) == 1 and row["target_limit"] == 119
+    b.fill_entry(150, True)
+    m.reconcile(b)
+    row = m.edit("preview-123", edit_prices(revision=1, stop_trigger=105, stop_limit=104), b,
+                 {"ltp": 110, "received_at": time.time()})
+    assert row["stop_trigger"] == 105  # trailing stop above original fill is permitted
+    trigger(m, b, 120)
+    assert b.calls[-1][:2] == ("exit", 150)
+    assert m.get("preview-123")["exit_limit"] == 119
+    with pytest.raises(ValueError, match="before an exit"):
+        m.edit("preview-123", edit_prices(revision=2), b, {"ltp": 110, "received_at": time.time()})
+
+
+def test_edit_rejects_stale_revision_quote_and_invalid_prices(setup):
+    m, b = setup
+    m.create(request(), b)
+    quote = {"ltp": 100, "received_at": time.time()}
+    m.edit("preview-123", edit_prices(), b, quote)
+    with pytest.raises(ValueError, match="another window"):
+        m.edit("preview-123", edit_prices(), b, quote)
+    with pytest.raises(ValueError, match="Fresh option"):
+        m.edit("preview-123", edit_prices(revision=1), b, {"ltp": 100, "received_at": 0})
+    with pytest.raises(ValueError, match="Profit limit"):
+        m.edit("preview-123", edit_prices(revision=1, target_limit=121), b, quote)
+    with pytest.raises(ValueError, match="Current premium"):
+        m.edit("preview-123", edit_prices(revision=1, stop_trigger=101), b, quote)
+    assert m.get("preview-123")["edit_revision"] == 1
+    assert len(b.calls) == 1
+
+
+def test_edit_survives_restart_and_rejects_quantity_changes(setup):
+    m, b = setup
+    m.create(request(), b)
+    m.edit("preview-123", edit_prices(), b, {"ltp": 100, "received_at": time.time()})
+    path = m.db.execute("PRAGMA database_list").fetchone()[2]
+    restored = LiveManager(path)
+    try:
+        assert restored.get("preview-123")["target_limit"] == 119
+        assert restored.get("preview-123")["edit_revision"] == 1
+        assert restored.get("preview-123")["state"] == "RECOVERY"
+    finally:
+        restored.db.close()
+    with pytest.raises(ValueError):
+        edit_prices(quantity=195)
 
 
 def test_ack_is_not_fill_and_exit_ack_does_not_close(setup):

@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 
 import websockets
 
-from backend.kotak_client import _first_value, _records, _nse_fo_row_expiry
+from backend.kotak_client import _first_value, _records, _nse_fo_row_expiry, _expiry_date
 
 
 FINAL = {"complete", "completed", "filled", "traded", "cancelled", "canceled", "rejected", "expired"}
@@ -25,6 +25,11 @@ def integer(value):
     if not math.isfinite(number) or number != int(number):
         raise ValueError("Broker returned an invalid quantity.")
     return int(number)
+
+
+def validate_lot_quantity(quantity, lot):
+    if lot <= 0 or quantity <= 0 or quantity % lot:
+        raise ValueError(f"Quantity must be a positive multiple of the current lot size ({lot} contract units).")
 
 
 def records(payload, allow_empty=True):
@@ -80,24 +85,28 @@ class ManagedBroker:
         now = datetime.now(ZoneInfo("Asia/Kolkata"))
         if now.weekday() >= 5 or not time(9, 15) <= now.time() < time(15, 15):
             raise ValueError("New managed entries are available on weekdays between 09:15 and 15:15 IST.")
-        if request.side != "BUY" or request.exchange_segment != "nse_fo":
-            raise ValueError("Managed entries currently support buying NSE Nifty/Bank Nifty options only.")
-        contracts = self.client._load_scrip_master("nse_fo")
+        allowed = {"nse_fo": {"NIFTY", "BANKNIFTY"}, "bse_fo": {"SENSEX"}}
+        if request.side != "BUY" or request.exchange_segment not in allowed:
+            raise ValueError("Managed entries support buying NSE Nifty/Bank Nifty and BSE Sensex options only.")
+        contracts = self.client._load_scrip_master(request.exchange_segment)
         contract = next((r for r in contracts if str(r.get("pSymbol")) == request.instrument_token and r.get("pTrdSymbol") == request.symbol), None)
-        if not contract or str(contract.get("pSymbolName", "")).upper() not in {"NIFTY", "BANKNIFTY"} or contract.get("pOptionType") not in {"CE", "PE"}:
-            raise ValueError("Instrument token and symbol must match a Nifty/Bank Nifty option in the current master.")
-        expiry = _nse_fo_row_expiry(contract)
+        if not contract or str(contract.get("pSymbolName", "")).strip().upper() not in allowed[request.exchange_segment] or contract.get("pOptionType") not in {"CE", "PE"}:
+            raise ValueError("Instrument token and symbol must match a supported index option in the selected exchange's current master.")
+        if request.exchange_segment == "nse_fo":
+            expiry = _nse_fo_row_expiry(contract)
+        else:
+            # BSE uses ordinary timestamps: do not apply the NSE epoch offset.
+            expiries = [_expiry_date(contract.get(key)) for key in ("pExpiryDate", "lExpiryDate", "expiry", "expiry_date", "expiryDate")]
+            expiry = max((value for value in expiries if value is not None), default=None)
         if not expiry or expiry.date() < now.date():
             raise ValueError("The option expiry could not be validated.")
         lot = integer(contract.get("lLotSize") or 0)
-        # Initial release stays within one lot; no guessing exchange freeze quantities.
-        if lot <= 0 or request.quantity != lot:
-            raise ValueError(f"Managed entries currently require exactly one lot ({lot} contract units).")
-        # NSE index options use 0.05 premium steps; validate master if it provides a normalized tick.
+        validate_lot_quantity(request.quantity, lot)
+        # Supported index-option premium prices use 0.05 steps.
         for price in (request.entry_limit, request.target_trigger, request.target_limit, request.stop_trigger, request.stop_limit):
             if price is not None and Decimal(str(price)) % Decimal("0.05"):
                 raise ValueError("Option prices must be multiples of 0.05.")
-        quotes = self.client.get_quotes([request.instrument_token], "nse_fo").get("quotes", [])
+        quotes = self.client.get_quotes([request.instrument_token], request.exchange_segment).get("quotes", [])
         ltp = float(quotes[0].get("ltp") or 0) if quotes else 0
         if not math.isfinite(ltp) or not request.stop_trigger < ltp < request.target_trigger:
             raise ValueError("Current premium must be available and between the stop and profit triggers before entry.")

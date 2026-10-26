@@ -117,6 +117,15 @@ class LiveService:
             self.wake.set()
             return result
 
+    async def edit(self, trade_id, changes):
+        async with self.mutex:
+            broker = self.broker()
+            if self.client is not broker.client or self.price_state != "connected" or self.order_state != "connected":
+                raise ValueError("Connected price and order feeds are required to edit protection.")
+            result = await asyncio.to_thread(self.manager.edit, trade_id, changes, broker, self.quote)
+            self.wake.set()
+            return result
+
     async def action(self, trade_id, action):
         async with self.mutex:
             result = await asyncio.to_thread(self.manager.action, trade_id, action, self.broker())

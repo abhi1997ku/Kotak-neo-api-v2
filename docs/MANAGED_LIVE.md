@@ -7,8 +7,11 @@ It is off by default. When selected, submitting sends a real entry to Kotak. Nei
 entry nor exit is simulated. Old preview records are in a separate database and
 are never converted into live orders. Preview routes are no longer exposed.
 
-Initial scope: one active managed trade per account, one lot of bought NSE Nifty
-or Bank Nifty options, MIS or NRML. Quantity is in contract units. New entries
+Current scope: one active managed trade per account, one or more whole lots of bought NSE Nifty,
+Bank Nifty, or BSE Sensex options, MIS or NRML. Sensex uses the BSE contract master,
+ordinary BSE expiry timestamps, and BSE quote/order routing. Quantity is in contract units and must be a
+positive multiple of the current instrument-master lot size. Broker/exchange
+quantity limits still apply; oversized orders are not automatically split. New entries
 require a matching current instrument-master token/symbol, valid expiry, 0.05
 premium steps, a flat instrument, no pending orders in that instrument, current
 premium inside the two triggers, and connected price/order feeds. Weekday entry
@@ -35,6 +38,14 @@ Recorded trigger-to-acknowledgement time includes those checks and broker latenc
 
 ## Controls and recovery
 
+- **Edit profit & stop:** update both trigger and limit prices while WAITING_ENTRY
+  or ARMED, before either exit is selected. Existing protection remains active
+  while the form is open. Saving reconciles fills, requires connected feeds and a
+  fresh premium inside the new triggers, and persists all four prices together.
+  Stale form revisions are rejected. A trailing stop may exceed the original
+  entry price. Once an exit has triggered, this edit is blocked.
+  Quantity remains tied to the original entry and actual fills; editing prices
+  does not place additional buys/sells or change a pending entry's quantity.
 - **Reconcile / resume:** refresh broker state. On the same trading day, known
   consistent orders can resume after a backend restart. This can send a previously
   selected exit once the entry's final quantity is confirmed.
@@ -72,6 +83,10 @@ local receive age; exchange tick timestamp freshness is not independently verifi
 Reconnection uses fresh receipt/reconciliation, not a guaranteed broker replay.
 
 ## Validation and deployment
+
+2026-10-26: 73 focused tests passed for the live manager, broker adapter, shared
+validation and order submission, including multi-lot quantities, price editing,
+stale revisions, persistence, and exit quantity preservation.
 
 2026-10-23: 61 focused tests passed across the live manager, broker adapter, legacy
 preview isolation, workspace isolation, order submission and authentication suites.

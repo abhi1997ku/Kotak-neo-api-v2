@@ -9,10 +9,12 @@ import math
 import sqlite3
 import threading
 import time
+from decimal import Decimal
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from backend.managed_broker import FINAL, matches
+from backend.managed_trades import ManagedTradeRequest
 
 DONE = {"CLOSED", "CANCELLED", "RELEASED"}
 
@@ -196,6 +198,33 @@ class LiveManager:
             return
         elapsed = round((time.time() - row["trigger_at"]) * 1000, 1) if row.get("trigger_at") else None
         self.save(row, state="EXIT_PENDING", exit_id=order_id, trigger_to_ack_ms=elapsed, note="Exit acknowledged; awaiting actual broker fills.")
+
+    def edit(self, trade_id, changes, broker, quote):
+        with self.lock:
+            row = self.get(trade_id)
+            if row["account"] != broker.account:
+                raise ValueError("This trade belongs to another account.")
+            if row["state"] not in {"WAITING_ENTRY", "ARMED"} or row.get("selected_leg") or row.get("exit_attempted"):
+                raise ValueError("Prices can only be edited before an exit triggers. Resolve pending or uncertain orders first.")
+            self.reconcile(broker)
+            row = self.get(trade_id)
+            if row["state"] not in {"WAITING_ENTRY", "ARMED"} or row.get("selected_leg") or row.get("exit_attempted"):
+                raise ValueError("Trade state changed. Refresh Managed Trades before editing.")
+            if changes.revision != row.get("edit_revision", 0):
+                raise ValueError("Prices were changed in another window. Reload the edit form.")
+            values = changes.model_dump(exclude={"revision"})
+            # A trailing stop may move beyond the original entry price after fills.
+            ManagedTradeRequest(**{**row["request"], **values, "entry_type": "MKT", "entry_limit": None})
+            if any(Decimal(str(value)) % Decimal("0.05") for value in values.values()):
+                raise ValueError("Option prices must be multiples of 0.05.")
+            if not quote or not 0 <= time.time() - quote["received_at"] <= 2 or not math.isfinite(quote["ltp"]):
+                raise ValueError("Fresh option premium is required to edit protection. Existing prices remain unchanged.")
+            if not values["stop_trigger"] < quote["ltp"] < values["target_trigger"]:
+                raise ValueError(f"Current premium ({quote['ltp']:.2f}) must be above the new Stop trigger and below the new Profit trigger. Existing prices remain unchanged.")
+            if broker.position(row) != row["entry_filled"] - row["exit_filled"]:
+                raise ValueError("Broker position differs from managed fills. Reconcile before editing.")
+            return self.save(row, **values, edit_revision=changes.revision + 1,
+                             note="Profit and stop prices updated. Exit quantity follows actual entry fills.")
 
     def action(self, trade_id, action, broker):
         with self.lock:

@@ -115,6 +115,20 @@ def test_invalid_trade_rejected(changes):
         request(**changes)
 
 
+@pytest.mark.parametrize("changes,message", [
+    ({"target_trigger": 160, "target_limit": 161}, "Profit limit (161.00) must be at or below Profit trigger (160.00)"),
+    ({"stop_limit": 96}, "Stop limit (96.00) must be at or below Stop trigger (95.00)"),
+    ({"stop_trigger": 111}, "Stop trigger must be below Profit trigger"),
+    ({"entry_type": "L", "entry_limit": 120}, "Entry limit (120.00) must be above Stop trigger"),
+    ({"side": "SELL", "target_trigger": 90, "target_limit": 89, "stop_trigger": 105, "stop_limit": 106}, "Profit limit (89.00) must be at or above Profit trigger (90.00)"),
+    ({"side": "SELL", "target_trigger": 90, "target_limit": 91, "stop_trigger": 105, "stop_limit": 104}, "Stop limit (104.00) must be at or above Stop trigger (105.00)"),
+])
+def test_price_errors_identify_field_and_correction(changes, message):
+    with pytest.raises(ValidationError) as error:
+        request(**changes)
+    assert message in str(error.value)
+
+
 @pytest.mark.parametrize("price", [float("nan"), float("inf"), -1, 0])
 def test_invalid_tick_ignored(store, price):
     store.create(request())

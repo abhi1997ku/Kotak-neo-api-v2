@@ -16,26 +16,22 @@ def test_observer_uses_two_r_and_separate_records(monkeypatch, tmp_path):
     import json
     import sqlite3
     import backend.indstocks_monitor as monitor
-    import screener.ema_vwap_research as engine
+    import backend.order_block_strategy as engine
     now = pd.Timestamp('2026-10-19 10:00', tz='Asia/Kolkata')
     monkeypatch.setattr(monitor, 'resolve_future', lambda _: {'SECURITY_ID': '1', 'TRADING_SYMBOL': 'TEST'})
     monkeypatch.setattr(monitor.client, 'history', lambda *args: {'data': {'NFO_1': {'candles': []}}})
     frame = pd.DataFrame({'Close': [100]}, index=[now-pd.Timedelta(minutes=1)])
     monkeypatch.setattr(monitor, 'completed_bars', lambda *args: (frame, frame))
-    def fake_signals(one, at, config, diagnostics=None):
-        assert config.target_r == 2.0
-        diagnostics.append({'timestamp': now.isoformat(), 'side': 'short', 'accepted': False,
-                            'reason_codes': ['NO_EMA_TOUCH']})
-        return [{'timestamp': now.isoformat(), 'side': 'long', 'entry': 100, 'stop': 95, 'target': 110}]
+    def fake_signals(one, at):
+        return [{'timestamp': now.isoformat(), 'side': 'long', 'entry': 100, 'stop': 95, 'target': 110, 'strategy': engine.STRATEGY, 'reason_codes': ['CONFIRMED_ORDER_BLOCK']}]
     monkeypatch.setattr(engine, 'signals', fake_signals)
     path = tmp_path/'observations.sqlite'
     result = monitor.observe(path, now)
-    assert result['strategy'] == 'ema9_vwap_2r'
+    assert result['strategy'] == engine.STRATEGY
     assert not result['orders_enabled'] and not result['fills_enabled']
     monitor.observe(path, now)
     with sqlite3.connect(path) as db:
         rows = db.execute('SELECT payload FROM observations').fetchall()
-    assert len(rows) == 2
+    assert len(rows) == 1
     assert json.loads(rows[0][0])['target_price'] == 110
-    assert result['rejected'] == 1
-    assert json.loads(rows[1][0])['reason_codes'] == ['NO_EMA_TOUCH']
+    assert result['rejected'] == 0

@@ -50,6 +50,7 @@ export function OptionChainPanel({ symbol, displayName }: OptionChainPanelProps)
       instrumentToken: instrumentToken || undefined,
       side,
       quantity: lotSize,
+      lotSize,
       product: "NRML",
       ltp: ltp > 0 ? ltp : undefined,
       orderType: "L",

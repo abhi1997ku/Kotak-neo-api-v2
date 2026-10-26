@@ -1,4 +1,4 @@
-﻿"""Paper-workspace-only read endpoints. Tokens are never supplied in URLs."""
+"""Paper-workspace-only read endpoints. Tokens are never supplied in URLs."""
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, Field
 
@@ -59,7 +59,7 @@ def option_paper(limit: int = 20, offset: int = 0) -> dict:
     if not 1 <= limit <= 100 or offset < 0:
         raise HTTPException(422, "Invalid history page")
     try:
-        return dashboard(Path(__file__).resolve().parents[1]/"data"/"ema9_option_paper.sqlite", limit, offset)
+        return dashboard(Path(__file__).resolve().parents[1]/"data"/"ob_option_paper.sqlite", limit, offset)
     except (sqlite3.Error, OSError, ValueError):
         raise HTTPException(503, "Paper journal temporarily unavailable") from None
 
@@ -138,7 +138,7 @@ def monitor() -> dict:
     root = Path(__file__).resolve().parents[1] / "data"
     now = datetime.now(ZoneInfo("Asia/Kolkata"))
     state = {}
-    path = root / "indstocks_ema9_status.json"
+    path = root / "indstocks_ob_status.json"
     if path.exists():
         try:
             state = json.loads(path.read_text())
@@ -149,7 +149,7 @@ def monitor() -> dict:
     except (KeyError, ValueError, TypeError):
         age = None
     rows = []
-    database = root / "indstocks_ema9_observations.sqlite"
+    database = root / "indstocks_ob_observations.sqlite"
     if database.exists():
         try:
             with sqlite3.connect(database.as_uri() + "?mode=ro", uri=True, timeout=2) as db:
