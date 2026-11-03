@@ -37,5 +37,7 @@ function New-TerminalShortcut {
 
 New-TerminalShortcut -Name 'Kotak Neo Terminal - Start' -Launcher 'Start Trading Terminal.cmd' -Description 'Start the Kotak Neo trading dashboard servers'
 New-TerminalShortcut -Name 'Kotak Neo Terminal - Stop' -Launcher 'Stop Trading Terminal.cmd' -Description 'Stop the Kotak Neo trading dashboard servers'
+New-TerminalShortcut -Name 'Kotak Neo Paper - Start' -Launcher 'Start Paper Research.cmd' -Description 'Start the Kotak Neo paper research dashboard and workers'
+New-TerminalShortcut -Name 'Kotak Neo Paper - Stop' -Launcher 'Stop Paper Research.cmd' -Description 'Stop the Kotak Neo paper research dashboard and workers'
 
 Write-Host 'Double-click either desktop shortcut. The command window shows the result; press a key to close it.'

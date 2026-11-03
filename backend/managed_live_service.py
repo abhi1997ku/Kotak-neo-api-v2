@@ -7,7 +7,7 @@ import math
 from pathlib import Path
 
 from backend.managed_broker import ManagedBroker
-from backend.managed_live import LiveManager, DONE
+from backend.managed_live import LiveManager, DONE, today
 from backend.session_manager import get_session_manager
 
 
@@ -94,12 +94,12 @@ class LiveService:
         self.tasks = [asyncio.create_task(self.prices(broker.client, key)), asyncio.create_task(self.orders(broker))]
         self.last_reconcile = 0
 
-    async def create(self, request):
+    async def create(self, request, *, attach=False):
         async with self.mutex:
             broker = self.broker()
             existing = [r for r in await asyncio.to_thread(self.manager.list, broker.account) if r["request_id"] == request.request_id]
             if existing:
-                if existing[0]["request"] != request.model_dump():
+                if existing[0]["request"] != request.model_dump() or bool(existing[0].get("attached_position")) != attach:
                     raise ValueError("Request ID already used with different values.")
                 return existing[0]
             if await asyncio.to_thread(self.manager.active, broker.account):
@@ -113,7 +113,7 @@ class LiveService:
             else:
                 await self.stop_feeds()
                 raise ValueError("Fresh option prices and order feed are required before a managed entry. No entry submitted.")
-            result = await asyncio.to_thread(self.manager.create, request, broker)
+            result = await asyncio.to_thread(self.manager.create, request, broker, attach=attach)
             self.wake.set()
             return result
 
@@ -135,6 +135,10 @@ class LiveService:
     async def snapshot(self):
         broker = self.broker()
         rows = await asyncio.to_thread(self.manager.list, broker.account)
+        # Reset completed history at IST midnight, preserving unresolved exposure
+        # and durable request IDs used to prevent duplicate submissions.
+        trading_day = today()
+        rows = [row for row in rows if row.get("trade_date") == trading_day or row["state"] not in DONE]
         quote = self.quote
         return {"mode": "live", "live_execution_enabled": True, "feed_state": self.price_state,
                 "order_feed_state": self.order_state, "error": self.error,

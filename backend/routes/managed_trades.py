@@ -24,6 +24,14 @@ async def create_managed(payload: ManagedTradeRequest):
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
+@router.post("/attach")
+async def attach_managed(payload: ManagedTradeRequest):
+    try:
+        return await get_live_service().create(payload, attach=True)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
 @router.post("/{trade_id}/edit")
 async def edit_managed(trade_id: str, payload: ManagedTradeEdit):
     try:

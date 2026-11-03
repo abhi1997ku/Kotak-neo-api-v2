@@ -14,7 +14,12 @@ positive multiple of the current instrument-master lot size. Broker/exchange
 quantity limits still apply; oversized orders are not automatically split. New entries
 require a matching current instrument-master token/symbol, valid expiry, 0.05
 premium steps, a flat instrument, no pending orders in that instrument, current
-premium inside the two triggers, and connected price/order feeds. Weekday entry
+premium, and connected price/order feeds. Market entries and attaching existing
+positions require premium inside the two triggers. Pending limit entries may be
+submitted with premium outside that range; stop < entry limit < profit is still
+required. Local exits arm only for confirmed fills, including partial fills.
+A buy limit above current premium may fill immediately; it is not a breakout
+entry trigger. Weekday entry
 window is 09:15–15:15 IST; holiday/exchange acceptance still belongs to Kotak.
 
 1. Persist intent and a stable client order tag before entry submission.
@@ -38,6 +43,15 @@ Recorded trigger-to-acknowledgement time includes those checks and broker latenc
 
 ## Controls and recovery
 
+- **Positions → Exit → Add target & stop to this position:** attach local
+  protection to an existing long Nifty/Bank Nifty/Sensex option position without
+  placing a new entry or an immediate exit. The entire broker-verified open
+  quantity is managed; partial attachment and short positions are not supported.
+  Pending orders for the instrument must be resolved first. Defaults use current
+  LTP and remain editable. Existing contract, session, weekday/time-window,
+  current-premium and feed checks still apply. Protection starts only after the
+  attach request succeeds. The manager persists a position baseline and verifies
+  it before exiting; a restart requires explicit reconciliation as usual.
 - **Edit profit & stop:** update both trigger and limit prices while WAITING_ENTRY
   or ARMED, before either exit is selected. Existing protection remains active
   while the form is open. Saving reconciles fills, requires connected feeds and a

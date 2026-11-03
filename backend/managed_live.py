@@ -58,19 +58,26 @@ class LiveManager:
     def active(self, account):
         return [r for r in self.list(account) if r["state"] not in DONE]
 
-    def create(self, request, broker):
+    def create(self, request, broker, *, attach=False):
         with self.lock:
             payload = request.model_dump()
             existing = next((r for r in self.list() if r["request_id"] == request.request_id), None)
             if existing:
-                if existing["account"] != broker.account or existing["request"] != payload:
+                if existing["account"] != broker.account or existing["request"] != payload or bool(existing.get("attached_position")) != attach:
                     raise ValueError("Request ID already used for another trade.")
                 return existing
             if self.active(broker.account):
                 raise ValueError("Finish or release the existing managed trade first. One active managed trade is supported.")
             broker.validate(request)
             rows = broker.orders()
-            if any(matches(r, payload) and r["status"] not in FINAL for r in rows) or broker.position(payload) != 0:
+            if attach and (request.side != "BUY" or request.entry_type != "MKT"):
+                raise ValueError("Attach protection requires an existing long option position, without a new entry price.")
+            position = broker.position(payload)
+            if attach and (position <= 0 or position != request.quantity):
+                raise ValueError(f"Position changed: broker shows {position} units. Refresh Positions and attach protection to the entire open quantity.")
+            if any(matches(r, payload) and r["status"] not in FINAL for r in rows) or (not attach and position != 0):
+                if attach:
+                    raise ValueError("Resolve pending orders for this instrument before adding target & stop, to avoid duplicate exits.")
                 raise ValueError("This instrument already has a position or pending order. Managed entries require a flat instrument.")
             digest = hashlib.sha256((broker.account + request.request_id).encode()).hexdigest()[:12]
             row = {**payload, "request": payload, "account": broker.account, "trade_date": today(), "mode": "live",
@@ -80,6 +87,9 @@ class LiveManager:
                    "exit_limit": None, "cancel_sent": False, "exit_attempted": False, "entry_price": None, "exit_price": None,
                    "baseline_ids": [r["id"] for r in rows if matches(r, payload)],
                    "note": "Sending real entry to Kotak.", "created_at": time.time()}
+            if attach:
+                return self.save(row, attached_position=True, entry_filled=position, entry_final=True,
+                                 state="ARMED", note="Target & stop attached to the verified open position. No new entry order placed.")
             self.save(row)
             try:
                 order_id = broker.place(row, "entry", row["quantity"], row["entry_tag"])
@@ -96,6 +106,8 @@ class LiveManager:
                 orders = broker.orders()
                 held = row["state"] in {"RECOVERY", "ATTENTION", "ENTRY_UNKNOWN", "EXIT_UNKNOWN"}
                 for leg in ("entry", "exit"):
+                    if leg == "entry" and row.get("attached_position"):
+                        continue
                     matches_tag = [o for o in orders if o["tag"] == row[f"{leg}_tag"]]
                     if row[f"{leg}_id"] is None and len(matches_tag) == 1:
                         row[f"{leg}_id"] = matches_tag[0]["id"]
@@ -103,6 +115,10 @@ class LiveManager:
                         self.save(row, state="ATTENTION", note="Multiple orders share the managed tag. Resolve in Kotak; automation paused.")
                         return
                 entry = next((o for o in orders if o["id"] == row["entry_id"]), None)
+                if row.get("attached_position"):
+                    # The baseline comes from a verified position, not an entry order.
+                    # Reuse reconciliation with immutable baseline quantity; never send an entry.
+                    entry = {"symbol": row["symbol"], "product": row["product"], "filled": row["quantity"], "status": "complete"}
                 exit_order = next((o for o in orders if o["id"] == row["exit_id"]), None)
                 if not entry:
                     self.save(row, state="ENTRY_UNKNOWN", note="Entry not found in report. Never resubmit blindly; verify Kotak order book.")
@@ -247,7 +263,7 @@ class LiveManager:
                 orders = broker.orders()
                 if any(matches(o, row) and o["status"] not in FINAL for o in orders):
                     raise ValueError("Cancel/resolve pending broker orders before releasing management.")
-                if not row["entry_id"] or (row.get("exit_attempted") and not row["exit_id"]):
+                if (not row["entry_id"] and not row.get("attached_position")) or (row.get("exit_attempted") and not row["exit_id"]):
                     raise ValueError("Unknown submission must be resolved before release. Check broker/support; do not duplicate it.")
                 self.save(row, state="RELEASED", note="Local management released by user. Any remaining position must be managed manually.")
             return self.get(trade_id)

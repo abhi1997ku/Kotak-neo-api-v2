@@ -1743,6 +1743,35 @@ class KotakClient:
     def search_instruments(self, query: str, exchange: str = "NSE") -> Dict[str, Any]:
         """Search instruments by symbol or fuzzy match with a practical fallback."""
         search_key = (query or "").strip()
+        if exchange.upper() == "OPTIONS":
+            self.ensure_logged_in()
+            if not search_key:
+                return {"results": []}
+            rows = self._load_scrip_master("nse_fo")
+            if self._scrip_master_warnings.get("nse_fo"):
+                raise KotakClientError("Current option contracts are unavailable. Please retry when the instrument master is available.")
+            today = datetime.now(ZoneInfo("Asia/Kolkata")).date()
+            matches = []
+            for row in rows:
+                option_type = str(row.get("pOptionType") or "").upper()
+                if option_type not in {"CE", "PE"}:
+                    continue
+                symbol = str(row.get("pTrdSymbol") or "")
+                underlying = str(row.get("pSymbolName") or "")
+                if not all(word in f"{underlying} {symbol}".upper() for word in search_key.upper().split()):
+                    continue
+                parsed_expiry = _nse_fo_row_expiry(row)
+                expiry_date = parsed_expiry.date() if parsed_expiry else None
+                lot_size = _integer(row.get("lLotSize"), 0)
+                token = str(row.get("pSymbol") or "")
+                if not expiry_date or expiry_date < today or lot_size <= 0 or not token or not symbol:
+                    continue
+                matches.append({"symbol": symbol, "trading_symbol": symbol,
+                    "name": f"{underlying} · {expiry_date.isoformat()} · {option_type} · Lot {lot_size}",
+                    "exchange": "NFO", "exchange_segment": "nse_fo",
+                    "instrument_token": token, "lot_size": lot_size, "expiry": expiry_date.isoformat()})
+            matches.sort(key=lambda item: (item["expiry"], item["symbol"]))
+            return {"results": matches[:100], "message": "Showing first 100 contracts; add strike or CE/PE to narrow results." if len(matches) > 100 else ""}
         exchange_segment = {
             "NSE": "nse_cm",
             "BSE": "bse_cm",
@@ -1877,7 +1906,8 @@ class KotakClient:
             if not spec:
                 raise KotakClientError(f"Option chains are supported for NIFTY, BANKNIFTY, and SENSEX; got {symbol}.")
             search_symbol, option_segment, underlying_segment, underlying_token = spec
-            resolved_expiry = _resolve_expiry(expiry)
+            relative_expiry = expiry in {"next_week", "next_month"}
+            resolved_expiry = "" if relative_expiry else (expiry or "")
             try:
                 result = self._option_contract_search(option_segment, search_symbol, resolved_expiry)
             except Exception:
@@ -1907,8 +1937,7 @@ class KotakClient:
                 if isinstance(contract, dict)
                 and str(contract.get("pSymbolName") or contract.get("symbol") or "").strip().upper() == search_symbol.upper()
             ]
-            if exact_contracts:
-                contracts = exact_contracts
+            contracts = exact_contracts
 
             underlying_ltp = 0.0
             underlying_quote_error = ""
@@ -1925,27 +1954,32 @@ class KotakClient:
             quote_tokens: list[dict[str, str]] = []
             contract_by_symbol: dict[str, tuple[dict[str, Any], str]] = {}
             dated_contracts = []
-            today = datetime.now()
+            today = datetime.now(ZoneInfo("Asia/Kolkata"))
+            parse_expiry = _nse_fo_expiry if option_segment == "nse_fo" else _expiry_date
             for contract in contracts:
-                contract_expiry = _nse_fo_expiry(contract.get("pExpiryDate") or contract.get("expiry"))
-                if contract_expiry and contract_expiry >= today.replace(hour=0, minute=0, second=0, microsecond=0):
-                    dated_contracts.append((contract_expiry, contract))
+                contract_expiry = parse_expiry(contract.get("pExpiryDate") or contract.get("expiry"))
+                if contract_expiry and contract_expiry.date() >= today.date():
+                    dated_contracts.append((contract_expiry.date(), contract))
 
-            if not resolved_expiry and dated_contracts:
-                today_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
-                future_expiries = [item[0] for item in dated_contracts if item[0] >= today_date]
-                nearest_expiry = min(future_expiries or [item[0] for item in dated_contracts])
-                contracts = [item[1] for item in dated_contracts if item[0] == nearest_expiry]
+            available_expiries = sorted({item[0] for item in dated_contracts})
+            selected_expiry = None
+            if expiry == "next_week":
+                selected_expiry = available_expiries[1] if len(available_expiries) > 1 else None
+            elif expiry == "next_month":
+                next_month = (today.year + (today.month == 12), today.month % 12 + 1)
+                monthly = [day for day in available_expiries if (day.year, day.month) == next_month]
+                selected_expiry = max(monthly, default=None)
             elif resolved_expiry:
-                requested_expiry = _expiry_date(resolved_expiry)
-                if requested_expiry:
-                    matching_contracts = [
-                        contract for contract in contracts
-                        if _nse_fo_expiry(contract.get("pExpiryDate") or contract.get("expiry"))
-                        and _nse_fo_expiry(contract.get("pExpiryDate") or contract.get("expiry")).date() == requested_expiry.date()
-                    ]
-                    if matching_contracts:
-                        contracts = matching_contracts
+                parsed = _expiry_date(resolved_expiry)
+                selected_expiry = parsed.date() if parsed else None
+            else:
+                selected_expiry = available_expiries[0] if available_expiries else None
+            contracts = [item[1] for item in dated_contracts if item[0] == selected_expiry]
+            if not contracts:
+                return {"chains": [], "symbol": search_symbol, "expiry": expiry or "current",
+                        "exchange_segment": option_segment, "ltp": underlying_ltp,
+                        "message": "No listed option contracts found for the selected expiry."}
+            resolved_expiry = selected_expiry.strftime("%d%b%Y").upper()
             for contract in contracts:
                 if not isinstance(contract, dict):
                     continue
@@ -2187,6 +2221,8 @@ class KotakClient:
                     "qty": _integer(_first_value(t, "tradeQty", "trdQty", "fldQty", "quantity", "qty")),
                     "price": _number(_first_value(t, "tradePrice", "avgPrc", "averagePrice", "price", "prc")),
                     "timestamp": str(trade_time),
+                    "product": str(_first_value(t, "prod", "product", "pCode", "productCode", default="")).upper(),
+                    "exchange_segment": str(_first_value(t, "exSeg", "exchange_segment", "exchangeSegment", default="")).lower(),
                 }
                 if trade["side"] == "B":
                     trade["side"] = "BUY"

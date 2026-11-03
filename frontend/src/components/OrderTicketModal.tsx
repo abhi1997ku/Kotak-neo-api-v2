@@ -47,7 +47,10 @@ export function OrderTicketModal({ ticket, onClose }: OrderTicketModalProps) {
   const [stopLimit, setStopLimit] = useState("");
   const manualPrices = useRef(new Set<string>());
   const managedRequest = useRef({ signature: "", id: "" });
-  const canManage = !isResearchWorkspace && !ticket.isExit && !ticket.isHoldingSale && Boolean(ticket.instrumentToken)
+  const canAttach = Boolean(ticket.isExit && ticket.side === "SELL");
+  const attaching = managed && canAttach;
+  const canManage = !isResearchWorkspace && (!ticket.isExit || canAttach) && !ticket.isHoldingSale && Boolean(ticket.instrumentToken)
+    && Boolean(managedDefaults(ticket.tradingSymbol || ticket.symbol, ticket.exchangeSegment, 1))
     && ["nse_fo", "bse_fo"].includes(ticket.exchangeSegment);
 
   const { data: quoteData } = useQuery({
@@ -58,16 +61,16 @@ export function OrderTicketModal({ ticket, onClose }: OrderTicketModalProps) {
   });
   const quoteLtp = Number(quoteData?.quotes?.[0]?.ltp || 0);
   const ltp = quoteLtp > 0 ? quoteLtp : Number(ticket.ltp || 0);
-  const defaultBase = orderType === "L" ? Number(price) : ltp;
+  const defaultBase = !attaching && orderType === "L" ? Number(price) : ltp;
   const defaults = managedDefaults(ticket.tradingSymbol || ticket.symbol, ticket.exchangeSegment, defaultBase);
 
   useEffect(() => {
-    if (!managed || side !== "BUY" || isSubmitting || !defaults) return;
+    if (!managed || (side !== "BUY" && !attaching) || isSubmitting || !defaults) return;
     if (!manualPrices.current.has("Profit trigger")) setTargetTrigger(defaults.targetPrice);
     if (!manualPrices.current.has("Profit limit")) setTargetLimit(defaults.targetPrice);
     if (!manualPrices.current.has("Stop trigger")) setStopTrigger(defaults.stopPrice);
     if (!manualPrices.current.has("Stop limit")) setStopLimit(defaults.stopPrice);
-  }, [managed, side, isSubmitting, defaults?.targetPrice, defaults?.stopPrice]);
+  }, [managed, side, attaching, isSubmitting, defaults?.targetPrice, defaults?.stopPrice]);
 
   useEffect(() => {
     if (orderType === "L" && !price && ltp > 0) setPrice(ltp.toFixed(2));
@@ -84,7 +87,7 @@ export function OrderTicketModal({ ticket, onClose }: OrderTicketModalProps) {
   const submitOrder = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (submitting.current) return;
-    const quantityValue = Number(quantity);
+    const quantityValue = attaching ? Number(ticket.maxQuantity) : Number(quantity);
     const priceValue = Number(price);
     if (!Number.isInteger(quantityValue) || quantityValue < 1) {
       setMessage("Quantity must be a whole number greater than zero.");
@@ -102,12 +105,12 @@ export function OrderTicketModal({ ticket, onClose }: OrderTicketModalProps) {
       setMessage(`Quantity cannot exceed the available ${ticket.isHoldingSale ? "holding" : "position"} quantity of ${ticket.maxQuantity}.`);
       return;
     }
-    if (orderType !== "MKT" && (!Number.isFinite(priceValue) || priceValue <= 0)) {
+    if (!attaching && orderType !== "MKT" && (!Number.isFinite(priceValue) || priceValue <= 0)) {
       setMessage("Enter a valid limit price.");
       return;
     }
     const triggerValue = Number(triggerPrice);
-    if (orderType === "SL") {
+    if (!attaching && orderType === "SL") {
       if (!Number.isFinite(triggerValue) || triggerValue <= 0) {
         setMessage("Enter a valid stop trigger price.");
         return;
@@ -128,12 +131,12 @@ export function OrderTicketModal({ ticket, onClose }: OrderTicketModalProps) {
     const submittedAt = performance.now();
     try {
       if (managed) {
-        if (orderType === "SL") throw new Error("Managed entries require Market or Limit.");
-        if (!canManage || side !== "BUY" || !["MIS", "NRML"].includes(product)) throw new Error("Managed entries require a BUY option and MIS or NRML product.");
+        if (!attaching && orderType === "SL") throw new Error("Managed entries require Market or Limit.");
+        if (!canManage || (!attaching && side !== "BUY") || !["MIS", "NRML"].includes(product)) throw new Error("Management requires a long option position and MIS or NRML product.");
         const payload = {
           symbol: ticket.tradingSymbol, instrument_token: ticket.instrumentToken!,
           exchange_segment: ticket.exchangeSegment as "nse_fo" | "bse_fo", product: product as "MIS" | "NRML",
-          side, quantity: quantityValue, entry_type: orderType, entry_limit: orderType === "L" ? priceValue : undefined,
+          side: "BUY" as const, quantity: quantityValue, entry_type: attaching ? "MKT" as const : orderType as "MKT" | "L", entry_limit: !attaching && orderType === "L" ? priceValue : undefined,
           target_trigger: Number(targetTrigger), target_limit: Number(targetLimit),
           stop_trigger: Number(stopTrigger), stop_limit: Number(stopLimit),
         };
@@ -141,10 +144,10 @@ export function OrderTicketModal({ ticket, onClose }: OrderTicketModalProps) {
         if (payload.target_limit > payload.target_trigger) throw new Error(`Profit limit (${payload.target_limit.toFixed(2)}) must be at or below Profit trigger (${payload.target_trigger.toFixed(2)}) for a BUY trade. Lower Profit limit or raise Profit trigger.`);
         if (payload.stop_limit > payload.stop_trigger) throw new Error(`Stop limit (${payload.stop_limit.toFixed(2)}) must be at or below Stop trigger (${payload.stop_trigger.toFixed(2)}) for a BUY trade. Lower Stop limit or raise Stop trigger.`);
         if (payload.stop_trigger >= payload.target_trigger) throw new Error("Stop trigger must be below Profit trigger for a BUY trade.");
-        if (orderType === "L" && !(payload.stop_trigger < priceValue && priceValue < payload.target_trigger)) throw new Error(`Entry limit (${priceValue.toFixed(2)}) must be above Stop trigger (${payload.stop_trigger.toFixed(2)}) and below Profit trigger (${payload.target_trigger.toFixed(2)}) for a BUY trade.`);
+        if (!attaching && orderType === "L" && !(payload.stop_trigger < priceValue && priceValue < payload.target_trigger)) throw new Error(`Entry limit (${priceValue.toFixed(2)}) must be above Stop trigger (${payload.stop_trigger.toFixed(2)}) and below Profit trigger (${payload.target_trigger.toFixed(2)}) for a BUY trade.`);
         const signature = JSON.stringify(payload);
         if (managedRequest.current.signature !== signature) managedRequest.current = { signature, id: crypto.randomUUID() };
-        const result = await managedTrades.create({ ...payload, request_id: managedRequest.current.id });
+        const result = await (attaching ? managedTrades.attach : managedTrades.create)({ ...payload, request_id: managedRequest.current.id });
         void queryClient.invalidateQueries({ queryKey: ["managed-trades"] });
         void queryClient.invalidateQueries({ queryKey: ["orders"] });
         void queryClient.invalidateQueries({ queryKey: ["positions"] });
@@ -208,7 +211,7 @@ export function OrderTicketModal({ ticket, onClose }: OrderTicketModalProps) {
         <div className="flex items-start justify-between border-b border-slate-800 px-5 py-4">
           <div>
             <h2 id="order-ticket-title" className="text-base font-semibold text-slate-100">
-              {managed ? "Live managed trade - real orders" : ticket.isHoldingSale ? "Sell holding" : ticket.isExit ? "Exit position" : "Place order"}
+              {attaching ? "Add target & stop to position" : managed ? "Live managed trade - real orders" : ticket.isHoldingSale ? "Sell holding" : ticket.isExit ? "Exit position" : "Place order"}
             </h2>
             <p className="mt-1 text-sm text-slate-400">{ticket.symbol}</p>
           </div>
@@ -229,12 +232,12 @@ export function OrderTicketModal({ ticket, onClose }: OrderTicketModalProps) {
               <button type="button" onClick={() => setSide("SELL")} className={`rounded-lg py-2.5 text-sm font-semibold ${side === "SELL" ? "bg-red-600 text-white" : "bg-slate-800 text-slate-400"}`}>Sell</button>
             </div>
           )}
-          {(ticket.isExit || ticket.isHoldingSale) && <p className="rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-200">{side} up to {ticket.maxQuantity} {ticket.isHoldingSale ? "held" : "open position"} units.</p>}
+          {(ticket.isExit || ticket.isHoldingSale) && <p className="rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-200">{attaching ? `Attach protection to all ${ticket.maxQuantity} open units. No new buy or immediate sell order.` : `${side} up to ${ticket.maxQuantity} ${ticket.isHoldingSale ? "held" : "open position"} units.`}</p>}
 
           <div className="grid grid-cols-2 gap-3">
             <label className="text-xs text-slate-400">
               Quantity
-              <input type="number" min={quantityStep} max={ticket.maxQuantity} step={quantityStep} value={quantity} onChange={(event) => setQuantity(event.target.value)} className="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-slate-100" />
+              <input disabled={attaching} type="number" min={quantityStep} max={ticket.maxQuantity} step={quantityStep} value={attaching ? ticket.maxQuantity : quantity} onChange={(event) => setQuantity(event.target.value)} className="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-slate-100" />
               {quantityStep > 1 && <span className="mt-1 block text-xs text-slate-500">1 lot = {quantityStep} units</span>}
             </label>
             <label className="text-xs text-slate-400">
@@ -245,32 +248,32 @@ export function OrderTicketModal({ ticket, onClose }: OrderTicketModalProps) {
                 <option value="NRML">NRML</option>
               </select>
             </label>
-            <label className="text-xs text-slate-400">
+            {!attaching && <label className="text-xs text-slate-400">
               Order type
               <select value={orderType} onChange={(event) => setOrderType(event.target.value as "MKT" | "L" | "SL")} className="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-slate-100">
                 <option value="MKT">Market</option>
                 <option value="L">Limit</option>
                 {ticket.isExit && <option value="SL">SL Limit</option>}
               </select>
-            </label>
-            {orderType !== "MKT" && (
+            </label>}
+            {!attaching && orderType !== "MKT" && (
               <label className="text-xs text-slate-400">
                 Limit price
                 <input type="number" min="0.01" step="0.01" value={price} onChange={(event) => setPrice(event.target.value)} className="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-slate-100" />
               </label>
             )}
-            {orderType === "SL" && <label className="text-xs text-slate-400">
+            {!attaching && orderType === "SL" && <label className="text-xs text-slate-400">
               Stop trigger price
               <input required type="number" min="0.01" step="0.01" value={triggerPrice} onChange={event => setTriggerPrice(event.target.value)} className="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-slate-100" />
             </label>}
           </div>
-          {orderType === "SL" && <p className="text-xs text-amber-200">Places a broker SL-limit order; the position stays open until it fills. {side === "SELL" ? "Set trigger below LTP and limit at or below trigger." : "Set trigger above LTP and limit at or above trigger."} A price gap can leave the order unfilled. Cancel any other exit for this quantity before placing another.</p>}
+          {!attaching && orderType === "SL" && <p className="text-xs text-amber-200">Places a broker SL-limit order; the position stays open until it fills. {side === "SELL" ? "Set trigger below LTP and limit at or below trigger." : "Set trigger above LTP and limit at or above trigger."} A price gap can leave the order unfilled. Cancel any other exit for this quantity before placing another.</p>}
 
           {canManage && <fieldset disabled={isSubmitting} className="space-y-3 rounded-lg border border-amber-500/30 p-3">
-            <label className="flex items-center gap-2 text-sm text-amber-200"><input type="checkbox" checked={managed} onChange={event => setManaged(event.target.checked)} />Live target & stop - real orders</label>
+            <label className="flex items-center gap-2 text-sm text-amber-200"><input type="checkbox" checked={managed} onChange={event => setManaged(event.target.checked)} />{canAttach ? "Add target & stop to this position" : "Live target & stop - real orders"}</label>
             {managed && <>
               {defaults && <div className="space-y-1 text-xs text-slate-400">
-                <p>Auto-fill: SL {defaults.stop} points / target {defaults.target} points from {orderType === "L" ? "entry limit" : "LTP"}{defaultBase > 0 ? ` (${defaultBase.toFixed(2)})` : ""}. Trigger and limit start equal. Manually edited fields stay fixed.</p>
+                <p>Auto-fill: SL {defaults.stop} points / target {defaults.target} points from {!attaching && orderType === "L" ? "entry limit" : "LTP"}{defaultBase > 0 ? ` (${defaultBase.toFixed(2)})` : ""}. Trigger and limit start equal. Manually edited fields stay fixed.</p>
                 {!defaults.stopPrice && defaultBase > 0 && <p className="text-amber-200">Premium is too low for this SL distance. Enter positive stop prices manually.</p>}
                 <button type="button" className="text-sky-300" onClick={() => {
                   manualPrices.current.clear();
@@ -278,7 +281,7 @@ export function OrderTicketModal({ ticket, onClose }: OrderTicketModalProps) {
                   setStopTrigger(defaults.stopPrice); setStopLimit(defaults.stopPrice);
                 }}>Reset all to defaults</button>
               </div>}
-              <p className="text-xs text-slate-400">Buy one or more whole lots of a Nifty/Bank Nifty/Sensex option, subject to broker order limits. Entry goes to Kotak; local premium triggers submit one real limit exit for the actual filled quantity. Quantity is in contract units. Keep the backend and connection running.</p>
+              <p className="text-xs text-slate-400">{attaching ? "Protect an existing bought Nifty/Bank Nifty/Sensex option. The broker position must match the full quantity and have no pending orders. Local triggers submit one real limit exit. Protection starts only after attachment succeeds." : "Buy one or more whole lots of a Nifty/Bank Nifty/Sensex option, subject to broker order limits. Entry goes to Kotak; local premium triggers submit one real limit exit for the actual filled quantity."} Keep the backend and connection running.</p>
               <div className="grid grid-cols-2 gap-2">
                 {([
                   ["Profit trigger", targetTrigger, setTargetTrigger], ["Profit limit", targetLimit, setTargetLimit],
@@ -289,7 +292,7 @@ export function OrderTicketModal({ ticket, onClose }: OrderTicketModalProps) {
               <p className="text-xs text-amber-200">An unfilled exit keeps your limit; the other trigger stays disabled. Backend or feed outages stop local trigger detection.</p>
             </>}
           </fieldset>}
-          {(ticket.isExit || ticket.isHoldingSale) && ticket.maxQuantity && quantity && Number(quantity) < ticket.maxQuantity && (
+          {!attaching && (ticket.isExit || ticket.isHoldingSale) && ticket.maxQuantity && quantity && Number(quantity) < ticket.maxQuantity && (
             <p className="text-xs text-slate-500">Partial sale - {ticket.maxQuantity - Number(quantity)} units will remain.</p>
           )}
           {orderType === "MKT" && ltp > 0 && <p className="text-xs text-slate-500">Estimated value: &#8377;{(ltp * Number(quantity || 0)).toFixed(2)}</p>}
@@ -300,7 +303,7 @@ export function OrderTicketModal({ ticket, onClose }: OrderTicketModalProps) {
         <div className="flex gap-2 border-t border-slate-800 px-5 py-4">
           <button type="button" onClick={onClose} disabled={isSubmitting} className="flex-1 rounded-lg border border-slate-700 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50">Cancel</button>
           <button type="submit" disabled={isSubmitting} className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50 ${side === "BUY" ? "bg-emerald-600 hover:bg-emerald-500" : "bg-red-600 hover:bg-red-500"}`}>
-            {managed ? (isSubmitting ? "Submitting managed entry..." : "Buy with live target & stop") : <>
+            {managed ? (isSubmitting ? "Saving managed trade..." : attaching ? "Attach target & stop" : "Buy with live target & stop") : <>
             {isSubmitting ? "Sending..." : orderType === "SL" ? "Place SL Limit" : `${ticket.isHoldingSale ? "Sell" : ticket.isExit ? "Exit" : side} ${ticket.symbol}`}
             </>}
           </button>

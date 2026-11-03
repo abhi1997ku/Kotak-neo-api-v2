@@ -67,6 +67,7 @@ def test_cached_contracts_still_fetch_fresh_prices_on_every_chain_open():
         search_scrip=Mock(return_value=[{
             "pSymbolName": "NIFTY", "pOptionType": "CE", "strike_price": 25000,
             "pTrdSymbol": "NIFTYTESTCE", "pSymbol": "123", "lLotSize": 75,
+            "pExpiryDate": "31DEC2099",
         }]),
         quotes=Mock(return_value=[]),
     )

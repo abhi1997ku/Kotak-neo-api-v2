@@ -1,0 +1,44 @@
+//@version=6
+// Hypothesis for comparison, NOT recovered TRENDIKATERR source or verified rules.
+indicator("Trend ribbon reconstruction (experimental)", overlay = true)
+length = input.int(11, "Ribbon EMA length", minval = 1)
+source = input.source(close, "EMA source (unverified)")
+showBox = input.bool(true, "Show action box on chart")
+showSignals = input.bool(true, "Show BUY / SELL signals")
+showBackground = input.bool(true, "Hold background")
+confirm = input.bool(true, "Confirm signals at bar close")
+instrument = input.string("Call", "Chart instrument", options = ["Call", "Put", "Other"])
+ribbon = ta.ema(source, length)
+// Hypothesis: price and EMA slope agree in directional states; otherwise recovery.
+candidate = close > ribbon and ribbon > ribbon[1] ? 1 : close < ribbon and ribbon < ribbon[1] ? -1 : 0
+var int state = 0
+var int holding = 0
+bool buy = false
+bool sell = false
+if not confirm or barstate.isconfirmed
+    state := candidate
+    buy := state == 1 and holding != 1
+    sell := state == -1 and holding != -1
+    if buy
+        holding := 1
+    if sell
+        holding := -1
+tint = state == 1 ? color.rgb(0, 180, 110) : state == -1 ? color.rgb(235, 50, 50) : color.orange
+plot(ribbon, "EMA ribbon", color = tint, linewidth = 4)
+plotshape(showSignals and buy, "Buy", shape.labelup, location.belowbar, color.rgb(0, 175, 220), text = "BUY", textcolor = color.white)
+plotshape(showSignals and sell, "Sell", shape.labeldown, location.abovebar, color.red, text = "SELL", textcolor = color.white)
+bgcolor(showBackground and holding != 0 ? color.new(holding == 1 ? color.aqua : color.red, 94) : na, title = "Hold background")
+var box = table.new(position.bottom_right, 1, 4)
+if barstate.islast
+    if showBox
+        trend = state == 1 ? "BULLISH" : state == -1 ? "BEARISH" : "RECOVERY"
+        // Option mapping is an explicit user choice, not an inferred symbol parser.
+        action = state == 0 ? "WAIT" : instrument == "Other" ? (state == 1 ? "BUY" : "SELL") : instrument == "Call" ? (state == 1 ? "BUY CE" : "EXIT CE / BUY PE") : (state == 1 ? "BUY PE" : "EXIT PE / BUY CE")
+        table.cell(box, 0, 0, "EXPERIMENTAL RIBBON", bgcolor = color.rgb(25, 25, 35), text_color = color.white)
+        table.cell(box, 0, 1, "TREND: " + trend, bgcolor = tint, text_color = color.white)
+        table.cell(box, 0, 2, "UNVERIFIED SIGNAL RULES", bgcolor = tint, text_color = color.white)
+        table.cell(box, 0, 3, "ACTION: " + action, bgcolor = tint, text_color = color.white)
+    else
+        table.clear(box, 0, 0, 0, 3)
+alertcondition(buy, "Experimental BUY", "Experimental ribbon changed to BUY")
+alertcondition(sell, "Experimental SELL", "Experimental ribbon changed to SELL")

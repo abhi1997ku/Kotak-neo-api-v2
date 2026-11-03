@@ -51,6 +51,26 @@ def client(monkeypatch):
     return result
 
 
+@pytest.mark.parametrize("premium", [90, 95, 110, 125])
+def test_limit_entry_allows_premium_outside_triggers_but_market_does_not(monkeypatch, premium):
+    c = client(monkeypatch)
+    class Clock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 10, 26, 10, 0, tzinfo=tz)
+    monkeypatch.setattr("backend.managed_broker.datetime", Clock)
+    c._load_scrip_master = Mock(return_value=[{"pSymbol": "123", "pTrdSymbol": "NIFTYTESTCE",
+        "pSymbolName": "NIFTY", "pOptionType": "CE", "pExpiryDate": "20261029", "lLotSize": 75}])
+    c.get_quotes = Mock(return_value={"quotes": [{"ltp": premium}]})
+    broker = ManagedBroker(c)
+    broker.validate(request(entry_type="L", entry_limit=100))
+    with pytest.raises(ValueError, match="market entry or attaching"):
+        broker.validate(request())
+    c.get_quotes.return_value = {"quotes": []}
+    with pytest.raises(ValueError, match="unavailable"):
+        broker.validate(request(entry_type="L", entry_limit=100))
+
+
 @pytest.mark.parametrize("payload", [None, {}, {"stat": "Ok"}, {"stat": "Not_Ok", "errMsg": "offline"}])
 def test_bad_report_is_not_empty_position(payload):
     with pytest.raises(ValueError):

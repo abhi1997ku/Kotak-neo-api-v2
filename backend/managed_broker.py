@@ -108,8 +108,12 @@ class ManagedBroker:
                 raise ValueError("Option prices must be multiples of 0.05.")
         quotes = self.client.get_quotes([request.instrument_token], request.exchange_segment).get("quotes", [])
         ltp = float(quotes[0].get("ltp") or 0) if quotes else 0
-        if not math.isfinite(ltp) or not request.stop_trigger < ltp < request.target_trigger:
-            raise ValueError("Current premium must be available and between the stop and profit triggers before entry.")
+        if not math.isfinite(ltp) or ltp <= 0:
+            raise ValueError("Current option premium is unavailable. Wait for a fresh quote before submitting.")
+        # Pending limit entries are anchored to the requested entry price, not LTP.
+        # The manager arms exits only after confirmed broker fills.
+        if request.entry_type == "MKT" and not request.stop_trigger < ltp < request.target_trigger:
+            raise ValueError(f"Current premium ({ltp:.2f}) must be between Stop trigger ({request.stop_trigger:.2f}) and Profit trigger ({request.target_trigger:.2f}) for market entry or attaching an existing position.")
 
     def orders(self):
         self.check_session()

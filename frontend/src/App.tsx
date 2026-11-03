@@ -5,6 +5,7 @@ import { Dashboard } from "./components/Dashboard";
 import { useEffect, useState, lazy, Suspense } from "react";
 import { isResearchWorkspace } from "./services/workspace";
 const OrderBlockPaperPanel = lazy(() => import("./components/OrderBlockPaperPanel"));
+const IntradayStocksPanel = lazy(() => import("./components/IntradayStocksPanel"));
 const ScreenerPanel = lazy(() => import("./components/ScreenerPanel").then(module => ({ default: module.ScreenerPanel })));
 
 const queryClient = new QueryClient({
@@ -36,9 +37,10 @@ function AppContent() {
 }
 
 function App() {
+  const [intradayPaper, setIntradayPaper] = useState(window.location.hash === "#intraday-stocks");
   const [swingPaper, setSwingPaper] = useState(window.location.hash === "#stock-paper");
   useEffect(() => {
-    const update = () => setSwingPaper(window.location.hash === "#stock-paper");
+    const update = () => { setSwingPaper(window.location.hash === "#stock-paper"); setIntradayPaper(window.location.hash === "#intraday-stocks"); };
     window.addEventListener("hashchange", update);
     return () => window.removeEventListener("hashchange", update);
   }, []);
@@ -50,12 +52,13 @@ function App() {
           <div className="mx-auto max-w-7xl">
             <nav aria-label="Paper trading navigation" className="mb-4 flex flex-wrap gap-4 text-sm text-slate-400">
               <span>Paper trading &amp; research</span>
-              <a href="#order-block-paper" aria-current={!swingPaper ? "page" : undefined} className={!swingPaper ? "text-emerald-300" : "hover:text-slate-100"}>Order block paper</a>
+              <a href="#order-block-paper" aria-current={!swingPaper && !intradayPaper ? "page" : undefined} className={!swingPaper && !intradayPaper ? "text-emerald-300" : "hover:text-slate-100"}>Order block paper</a>
+              <a href="#intraday-stocks" aria-current={intradayPaper ? "page" : undefined} className={intradayPaper ? "text-emerald-300" : "hover:text-slate-100"}>Intraday stocks</a>
               <a href="#stock-paper" aria-current={swingPaper ? "page" : undefined} className={swingPaper ? "text-emerald-300" : "hover:text-slate-100"}>Swing trades</a>
               <a href="http://localhost:5173/">Live terminal</a>
             </nav>
             <Suspense fallback={<p className="text-slate-300">Loading paper workspace…</p>}>
-              {swingPaper ? <ScreenerPanel /> : <OrderBlockPaperPanel />}
+              {intradayPaper ? <IntradayStocksPanel /> : swingPaper ? <ScreenerPanel /> : <OrderBlockPaperPanel />}
             </Suspense>
           </div>
         </main>

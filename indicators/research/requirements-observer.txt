@@ -1,0 +1,2 @@
+# Isolated browser observer dependency; no broker or trading integration.
+playwright==1.64.1

@@ -149,7 +149,7 @@ def monitor() -> dict:
     except (KeyError, ValueError, TypeError):
         age = None
     rows = []
-    database = root / "indstocks_ob_observations.sqlite"
+    database = root / "indstocks_ob_v3_observations.sqlite"
     if database.exists():
         try:
             with sqlite3.connect(database.as_uri() + "?mode=ro", uri=True, timeout=2) as db:

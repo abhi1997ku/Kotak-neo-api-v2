@@ -2,10 +2,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.routes.indstocks import router
+from backend.routes.intraday_stocks import router as intraday_stock_router
 
 app = FastAPI(title="INDstocks Paper Research")
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5174", "http://127.0.0.1:5174"], allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
 app.include_router(router, prefix="/api")
+app.include_router(intraday_stock_router, prefix="/api")
 
 
 @app.get("/health")

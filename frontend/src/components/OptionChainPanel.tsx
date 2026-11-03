@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, TrendingUp, TrendingDown } from "lucide-react";
 import { apiClient, type OptionToken } from "../services/api";
 import { OrderTicketModal, type OrderTicketRequest } from "./OrderTicketModal";
+import { QuickScalpPanel } from "./QuickScalpPanel";
 
 interface OptionChainPanelProps {
   symbol: string;
@@ -219,6 +220,7 @@ export function OptionChainPanel({ symbol, displayName }: OptionChainPanelProps)
 
   return (
     <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+      <QuickScalpPanel key={`${symbol}-${expiry}-${data?.expiry || ""}`} chains={chains} symbol={symbol} expiry={data?.expiry || expiry || "Current"} ready={feedState === "live" && !isFetching && !error} />
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h3 className="text-sm uppercase tracking-wide text-slate-400">

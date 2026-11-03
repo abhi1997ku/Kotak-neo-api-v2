@@ -1,0 +1,36 @@
+//@version=6
+// Experimental fitted candidate, not original source or a faithful signal replica.
+// Historical state agreement is much stronger than exact BUY/SELL agreement.
+indicator("Experimental channel-state candidate", overlay = true)
+showSignals = input.bool(false, "Show UNVERIFIED candidate signals")
+showChannel = input.bool(false, "Show experimental EMA channel")
+length = input.int(100, "Channel EMA length", minval = 1)
+confirmation = input.int(4, "Consecutive closes above channel", minval = 1)
+upper = ta.ema(high, length)
+lower = ta.ema(low, length)
+ribbon = ta.ema(close, 11)
+// Selected hypothesis uses the previous candle, with no future data.
+var int state = 0
+var int count = 0
+if not na(upper[1])
+    if close[1] < lower[1]
+        state := 0
+        count := 0
+    else if close[1] > upper[1]
+        count := count + 1
+        state := count >= confirmation ? 2 : 1
+    else if state != 2
+        count := 0
+        state := 0
+buy = state == 2 and state[1] != 2
+sell = state == 0 and state[1] != 0
+tint = state == 2 ? color.green : state == 1 ? color.orange : color.red
+plot(ribbon, "Confirmed EMA(close, 11) formula / candidate color", color = tint, linewidth = 4)
+plot(showChannel ? upper : na, "Experimental upper channel", color = color.gray)
+plot(showChannel ? lower : na, "Experimental lower channel", color = color.gray)
+plotshape(showSignals and buy, "Unverified BUY", shape.labelup, location.belowbar, color.aqua, text = "TEST BUY", textcolor = color.black)
+plotshape(showSignals and sell, "Unverified SELL", shape.labeldown, location.abovebar, color.red, text = "TEST SELL", textcolor = color.white)
+var note = table.new(position.bottom_right, 1, 2)
+if barstate.islast
+    table.cell(note, 0, 0, "EXPERIMENTAL FIT / SIGNALS NOT REPLICATED", bgcolor = color.black, text_color = color.white)
+    table.cell(note, 0, 1, state == 2 ? "Candidate: bullish" : state == 1 ? "Candidate: recovery" : "Candidate: bearish", bgcolor = tint, text_color = color.white)

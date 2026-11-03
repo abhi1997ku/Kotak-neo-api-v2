@@ -41,7 +41,7 @@ export default function OrderBlockPaperPanel() {
   return <section className="space-y-5 rounded-xl border border-slate-700 bg-slate-900 p-5 text-slate-100">
     <header className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-semibold">Order blocks / 5 minute  /  2R  /  BANKNIFTY</h1><p className="mt-1 text-sm text-slate-400">INDstocks  /  Signal observation  /  {report?.date ?? "Today"}  /  IST</p></div><button className="rounded border border-slate-600 px-4 py-2" onClick={() => query.refetch()} disabled={query.isFetching}>{query.isFetching ? "Refreshing..." : "Refresh"}</button></header>
     <IndstocksIndexQuotes />
-    <p className="text-sm text-slate-400">Five confirming candles / Midpoint retest / 09:30-15:00 entries / Latest zone per side / Stop one tick beyond zone / 2R from actual underlying fill / 15:15 exit. Paper options only.</p>
+    <p className="text-sm text-slate-400">Three confirming candles / Midpoint retest / 09:30-15:00 entries / Latest zone per side / Stop one tick beyond zone / Actual stop distance must be 15?60 futures points / 2R from actual underlying fill / 15:15 exit. Paper options only.</p>
     <div className="rounded-lg bg-slate-800 p-4"><p className="text-sm text-slate-400">INDstocks live BANKNIFTY futures  /  {live.state}</p><p className="text-2xl font-semibold">{live.price?.toLocaleString("en-IN", { minimumFractionDigits: 2 }) ?? "-"}</p><p className="text-xs text-slate-400">Received: {time(live.received)}  /  Signals use completed INDstocks candles.</p></div>
     <OptionPaper />
     {query.isError && <p role="alert" className="text-red-300">{query.error.message} Displayed data may be outdated.</p>}

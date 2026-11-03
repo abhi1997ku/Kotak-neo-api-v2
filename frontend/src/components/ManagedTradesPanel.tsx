@@ -40,7 +40,8 @@ export function ManagedTradesPanel() {
       {query.data?.error && <p role="alert" className="text-sm text-red-300">{query.data.error}</p>}
       {(error || query.error) && <p role="alert" className="text-sm text-red-300">{error || String(query.error)}</p>}
       {query.isLoading && <p className="text-sm text-slate-400">Loading managed orders…</p>}
-      {query.data?.trades.length === 0 && <p className="text-sm text-slate-400">No managed trades yet. Enable “Live target & stop” in a buy option ticket.</p>}
+      <p className="text-xs text-slate-500">Today's trades (IST). Older unresolved trades remain visible until resolved.</p>
+      {query.data?.trades.length === 0 && <p className="text-sm text-slate-400">No managed trades today. Enable “Live target & stop” in a buy option ticket.</p>}
       {query.data?.trades.map(row => <article key={row.request_id} className="rounded border border-slate-700 p-3 text-sm">
         <div className="flex flex-wrap justify-between gap-2"><strong>{row.symbol} · {row.side} {row.quantity} units</strong><span className="text-amber-200">{row.state.replace(/_/g, " ")}</span></div>
         <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-300 md:grid-cols-4">
@@ -50,7 +51,7 @@ export function ManagedTradesPanel() {
           <span>Stop trigger / limit: {money(row.stop_trigger)} / {money(row.stop_limit)}</span>
         </div>
         <p className="mt-2 text-xs text-slate-400">{row.note}</p>
-        <p className="mt-1 text-xs text-slate-400">Entry {row.entry_id || "Awaiting ID"}: {row.entry_filled}/{row.quantity} filled · Exit {row.exit_id || "Not submitted"}: {row.exit_filled} filled</p>
+        <p className="mt-1 text-xs text-slate-400">{row.attached_position ? `Attached position: ${row.entry_filled} units` : `Entry ${row.entry_id || "Awaiting ID"}: ${row.entry_filled}/${row.quantity} filled`} · Exit {row.exit_id || "Not submitted"}: {row.exit_filled} filled</p>
         {row.trigger_to_ack_ms != null && <p className="mt-1 text-xs text-slate-400">Trigger to broker acknowledgement: {row.trigger_to_ack_ms} ms (not fill time)</p>}
         {row.selected_leg && <p className="mt-1 text-xs text-amber-200">Selected: {row.selected_leg}. Other trigger disabled.</p>}
         {editing?.id === row.request_id && <form onSubmit={savePrices} className="mt-3 space-y-2 rounded border border-slate-600 p-3">

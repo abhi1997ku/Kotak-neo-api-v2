@@ -2,12 +2,14 @@
 from dataclasses import dataclass
 import pandas as pd
 
-STRATEGY = 'order_block_5m_midpoint_2r_v1'
+STRATEGY = 'order_block_5m_3confirm_risk15to60_2r_v3'
 
 
 @dataclass(frozen=True)
 class OrderBlockParams:
-    periods: int = 5
+    periods: int = 3
+    min_stop_points: float = 15.0
+    max_stop_points: float = 60.0
     threshold: float = 0.0
     usewicks: bool = False
     tick: float = 0.05
@@ -21,7 +23,7 @@ PARAMS = OrderBlockParams()
 
 
 def signals(five: pd.DataFrame, now: pd.Timestamp) -> list[dict]:
-    """Detect at the close of the fifth confirming candle, never at zone origin."""
+    """Detect at the close of the configured final confirming candle, never at zone origin."""
     from screener.pine_ob_research import detect
     closed = five[five.index + pd.Timedelta(minutes=5) <= now]
     if closed.empty:

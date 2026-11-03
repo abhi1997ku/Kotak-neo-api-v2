@@ -1,219 +1,681 @@
-INFO:     127.0.0.1:58836 - "OPTIONS /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58836 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61900 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54177 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54177 - "OPTIONS /api/auth/login HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54177 - "POST /api/auth/login HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54177 - "OPTIONS /api/watchlist/?indices_only=true HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57580 - "OPTIONS /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54177 - "OPTIONS /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52532 - "OPTIONS /api/positions/?kind=net HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57686 - "OPTIONS /api/orders/trade-book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52068 - "OPTIONS /api/market/option-chain?symbol=NIFTY HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52532 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55460 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55158 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57686 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/watchlist/?indices_only=true HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64329 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64329 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64329 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64329 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64329 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64329 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/market/option-chain?symbol=NIFTY HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "OPTIONS /api/market/option-chain?symbol=BANKNIFTY HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "OPTIONS /api/market/quotes?symbols=51342&exchange_segment=nse_fo HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/market/quotes?symbols=51342&exchange_segment=nse_fo HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64329 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/market/quotes?symbols=51342&exchange_segment=nse_fo HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/market/option-chain?symbol=BANKNIFTY HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "OPTIONS /api/market/option-chain?symbol=SENSEX HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/market/quotes?symbols=51342&exchange_segment=nse_fo HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58104 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/market/option-chain?symbol=SENSEX HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/market/quotes?symbols=51342&exchange_segment=nse_fo HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/market/quotes?symbols=51342&exchange_segment=nse_fo HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65041 - "GET /api/market/quotes?symbols=51342&exchange_segment=nse_fo HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49175 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49175 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49175 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49175 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49175 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49175 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49175 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49175 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49175 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49175 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49175 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61065 - "OPTIONS /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58317 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63003 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53730 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49223 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54778 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54778 - "OPTIONS /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54778 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54778 - "OPTIONS /api/watchlist/?indices_only=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54778 - "OPTIONS /api/market/option-chain?symbol=NIFTY HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64681 - "OPTIONS /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "OPTIONS /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54596 - "OPTIONS /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59989 - "OPTIONS /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61345 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54596 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59093 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51058 - "GET /api/watchlist/?indices_only=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51058 - "OPTIONS /api/market/option-chain?symbol=BANKNIFTY HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50540 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "OPTIONS /api/market/search?query=re&exchange=OPTIONS HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50540 - "OPTIONS /api/market/search?query=reli&exchange=OPTIONS HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63563 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63563 - "OPTIONS /api/market/search?query=relia&exchange=OPTIONS HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62879 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62879 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62879 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62879 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62879 - "OPTIONS /api/market/search?query=reliance%20&exchange=OPTIONS HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62879 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62879 - "OPTIONS /api/market/search?query=reliance%2013&exchange=OPTIONS HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/market/search?query=re&exchange=OPTIONS HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/market/search?query=reliance%2013&exchange=OPTIONS HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "OPTIONS /api/market/search?query=reliance%201300&exchange=OPTIONS HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "OPTIONS /api/market/search?query=reliance&exchange=OPTIONS HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "OPTIONS /api/positions/holdings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/market/search?query=reliance%20&exchange=OPTIONS HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "OPTIONS /api/market/search?query=reliance&exchange=NSE HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/market/search?query=reliance%201300&exchange=OPTIONS HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/market/search?query=reliance&exchange=OPTIONS HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "OPTIONS /api/market/search?query=relianc&exchange=NSE HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/positions/holdings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63563 - "GET /api/market/search?query=relia&exchange=OPTIONS HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63563 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/market/search?query=reliance&exchange=NSE HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62879 - "GET /api/market/search?query=reliance%20&exchange=OPTIONS HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62879 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62879 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "GET /api/positions/holdings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62879 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63563 - "GET /api/market/search?query=relianc&exchange=NSE HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51058 - "GET /api/market/option-chain?symbol=BANKNIFTY HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49487 - "GET /api/market/option-chain?symbol=NIFTY HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49487 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51058 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51058 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51058 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51058 - "OPTIONS /api/market/option-chain?symbol=SENSEX HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49487 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63563 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63563 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49487 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49487 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49487 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49487 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49487 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49487 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49487 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49487 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63563 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49487 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63563 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63563 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49487 - "OPTIONS /api/market/search?query=tcs&exchange=NSE HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50540 - "GET /api/market/search?query=reli&exchange=OPTIONS HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63563 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63563 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63563 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50540 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50540 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51058 - "GET /api/market/option-chain?symbol=SENSEX HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51058 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/market/search?query=tcs&exchange=NSE HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51058 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "OPTIONS /api/market/search?query=tcs&exchange=OPTIONS HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/market/search?query=tcs&exchange=OPTIONS HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51058 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51058 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51058 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51058 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51058 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51058 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51058 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51058 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51058 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51058 - "GET /api/market/search?query=reliance&exchange=OPTIONS HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51058 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55579 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55579 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55579 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55579 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55579 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "OPTIONS /api/market/quotes?symbols=144183&exchange_segment=nse_fo HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53666 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/market/quotes?symbols=144183&exchange_segment=nse_fo HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53666 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53666 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53666 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53666 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53666 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53666 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53666 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53666 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53666 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58935 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58935 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53666 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58935 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58935 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58935 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58935 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58935 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58935 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58935 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53666 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58935 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64942 - "GET /api/market/option-chain?symbol=BANKNIFTY HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54669 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56577 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64534 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60819 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63728 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57209 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61653 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63753 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49205 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51339 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65411 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62656 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56693 - "OPTIONS /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56693 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56175 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58456 - "OPTIONS /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62523 - "OPTIONS /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64370 - "OPTIONS /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49219 - "OPTIONS /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64370 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49193 - "GET /api/auth/status HTTP/1.1" 200 OK
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+INFO:     127.0.0.1:49219 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58456 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56758 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56758 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55955 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54431 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54431 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54431 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54431 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54431 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54431 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56591 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64843 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51588 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61997 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52333 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58650 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63752 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63484 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60337 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65161 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53023 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64337 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58550 - "GET /api/managed-trades HTTP/1.1" 200 OK
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+INFO:     127.0.0.1:64020 - "GET /api/orders/book HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:60017 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64020 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57340 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63043 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63043 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63043 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63043 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63043 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57340 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57340 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57340 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57340 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57340 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63043 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63043 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63043 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63043 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63043 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57340 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57340 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57340 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57340 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57340 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63043 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63043 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63043 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63043 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63043 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57340 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57049 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55681 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61065 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61912 - "OPTIONS /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61912 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50145 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54569 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53787 - "GET /api/auth/status HTTP/1.1" 200 OK
 INFO:     127.0.0.1:49175 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49175 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49175 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49175 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49175 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63951 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63951 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63951 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54915 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49175 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63951 - "GET /api/market/option-chain?symbol=BANKNIFTY HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63951 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63951 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63951 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55395 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55395 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55395 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55395 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55395 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55395 - "GET /api/market/quotes?symbols=51342&exchange_segment=nse_fo HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60132 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55395 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55395 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55395 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55395 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55395 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55395 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55395 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55395 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55395 - "GET /api/market/quotes?symbols=51342&exchange_segment=nse_fo HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55395 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55395 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55395 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51392 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51392 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51392 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51392 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51392 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51392 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51392 - "GET /api/market/quotes?symbols=51342&exchange_segment=nse_fo HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51392 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51392 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51392 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51392 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51392 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51392 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51392 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51392 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51392 - "GET /api/market/quotes?symbols=51342&exchange_segment=nse_fo HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51392 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51392 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51392 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51392 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60061 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61737 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52933 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61859 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63667 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55019 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64005 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53808 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49166 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50352 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64493 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50021 - "GET /api/market/quotes?symbols=51342&exchange_segment=nse_fo HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50021 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50021 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50021 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50021 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50021 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50021 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64493 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50021 - "GET /api/market/option-chain?symbol=SENSEX HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50021 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50021 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50021 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50021 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50021 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50021 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50021 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61399 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50021 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60518 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61286 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:62201 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58015 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51922 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50393 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54423 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63145 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51756 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50358 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55528 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53255 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60221 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54293 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54293 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54293 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54293 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60221 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53255 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50358 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55528 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60221 - "GET /api/watchlist/?indices_only=true HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64196 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64196 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64196 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53067 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53067 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53067 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53067 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53067 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53067 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53067 - "GET /api/orders/book HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53067 - "GET /api/managed-trades HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53067 - "GET /api/managed-trades HTTP/1.1" 200 OK
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+INFO:     127.0.0.1:54818 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65202 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58470 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59413 - "OPTIONS /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59413 - "OPTIONS /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65413 - "OPTIONS /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50154 - "OPTIONS /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50154 - "GET /api/managed-trades HTTP/1.1" 200 OK
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+INFO:     127.0.0.1:59413 - "GET /api/orders/book HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:49815 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49815 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65413 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65413 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65413 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65413 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65413 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65413 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65413 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65413 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65413 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65413 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65413 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65413 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65413 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65413 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65413 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65413 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65413 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65413 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56469 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65413 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50165 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50165 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50165 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53497 - "GET /api/auth/status HTTP/1.1" 200 OK
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+INFO:     127.0.0.1:50411 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54951 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63047 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55077 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55077 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49583 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61634 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61634 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61634 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54659 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57293 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51819 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54077 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50807 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62477 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53958 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53958 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57706 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60174 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63858 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60331 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60138 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64434 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51171 - "OPTIONS /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51171 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62586 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57829 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51367 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63154 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58534 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59435 - "OPTIONS /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59682 - "OPTIONS /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49395 - "OPTIONS /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56471 - "OPTIONS /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59435 - "GET /api/managed-trades HTTP/1.1" 200 OK
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+INFO:     127.0.0.1:49395 - "GET /api/orders/book HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:59435 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59435 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56471 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59682 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59682 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59682 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65210 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49187 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54827 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50429 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61924 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53973 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51676 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49907 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63234 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64209 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63405 - "OPTIONS /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63405 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52135 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49237 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51111 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49933 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52142 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51400 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54748 - "GET /api/auth/status HTTP/1.1" 200 OK
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+INFO:     127.0.0.1:63321 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62507 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63520 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55343 - "OPTIONS /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55343 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57464 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58869 - "GET /api/auth/status HTTP/1.1" 200 OK
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+INFO:     127.0.0.1:61003 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49656 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51869 - "GET /api/auth/status HTTP/1.1" 200 OK
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+INFO:     127.0.0.1:62421 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58455 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59147 - "OPTIONS /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59147 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59147 - "OPTIONS /api/watchlist/?indices_only=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59147 - "OPTIONS /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59147 - "OPTIONS /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59147 - "OPTIONS /api/orders/trade-book HTTP/1.1" 200 OK
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+INFO:     127.0.0.1:59147 - "GET /api/watchlist/?indices_only=true HTTP/1.1" 502 Bad Gateway
+INFO:     127.0.0.1:62802 - "OPTIONS /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49170 - "OPTIONS /api/market/option-chain?symbol=NIFTY HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62491 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56616 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53493 - "OPTIONS /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53493 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63191 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59032 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62529 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59521 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57352 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52369 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61840 - "GET /api/auth/status HTTP/1.1" 200 OK
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+INFO:     127.0.0.1:52564 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59566 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63457 - "GET /api/auth/status HTTP/1.1" 200 OK
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+INFO:     127.0.0.1:63819 - "OPTIONS /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63819 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52765 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49650 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53717 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55023 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52822 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61666 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63238 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60324 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64798 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51029 - "OPTIONS /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51029 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54610 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50867 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61197 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54534 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62198 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59970 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64548 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58006 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50856 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57800 - "GET /api/auth/status HTTP/1.1" 200 OK
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+INFO:     127.0.0.1:63773 - "OPTIONS /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63773 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61148 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56881 - "GET /api/auth/status HTTP/1.1" 200 OK
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+INFO:     127.0.0.1:56169 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63122 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58958 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59040 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55911 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56887 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49808 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64200 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60618 - "OPTIONS /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60618 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58682 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56569 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50646 - "GET /api/auth/status HTTP/1.1" 200 OK
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+INFO:     127.0.0.1:62193 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56890 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63982 - "GET /api/auth/status HTTP/1.1" 200 OK
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+INFO:     127.0.0.1:54120 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60954 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49545 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62110 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55712 - "OPTIONS /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55712 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50590 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50275 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53827 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53487 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62607 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61288 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56978 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59965 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59731 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64920 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61412 - "OPTIONS /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61412 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51202 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59106 - "GET /api/auth/status HTTP/1.1" 200 OK
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+INFO:     127.0.0.1:64217 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59514 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60255 - "GET /api/auth/status HTTP/1.1" 200 OK
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+INFO:     127.0.0.1:59024 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63992 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54150 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50625 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58028 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56437 - "OPTIONS /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56437 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65029 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65155 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62701 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51433 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63220 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57463 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64569 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54816 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51193 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57228 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62605 - "OPTIONS /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62605 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50597 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51311 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63245 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56490 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59500 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53780 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64197 - "GET /api/auth/status HTTP/1.1" 200 OK
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+ERROR msg (0)
+Reason: ConnectionError
+('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+
+INFO:     127.0.0.1:57404 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62776 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64344 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64598 - "OPTIONS /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55030 - "OPTIONS /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55030 - "OPTIONS /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64598 - "OPTIONS /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58195 - "OPTIONS /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56294 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64118 - "GET /api/auth/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55030 - "GET /api/orders/book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64598 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58195 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58195 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58195 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58195 - "GET /api/orders/trade-book HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64598 - "GET /api/positions/?kind=net HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64598 - "GET /api/managed-trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64598 - "GET /api/orders/book HTTP/1.1" 200 OK

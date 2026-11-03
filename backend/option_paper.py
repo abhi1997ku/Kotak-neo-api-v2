@@ -4,9 +4,11 @@ import json
 import math
 import sqlite3
 import time
+from concurrent.futures import ThreadPoolExecutor
+from copy import deepcopy
 from pathlib import Path
 import pandas as pd
-from backend.indstocks_data import client, INDstocksError
+from backend.indstocks_data import client, INDstocksError, INDstocksData
 from backend.indstocks_monitor import ROOT, refresh_master, resolve_future, observe
 from backend.option_paper_store import load_state, save_state
 from backend.order_block_strategy import STRATEGY, PARAMS, eligible
@@ -92,7 +94,10 @@ def process(state: dict, setups: list[dict], snapshot: dict, rows: list[dict], n
         raise ValueError("STALE_RECEIPT")
     data = snapshot["data"]
     future_code = state["future_code"]
-    future = float(data[future_code]["live_price"])
+    future_quote = data.get(future_code) or {}
+    if future_quote.get('live_price') is None:
+        raise ValueError('MISSING_UNDERLYING_QUOTE')
+    future = float(future_quote['live_price'])
     if not math.isfinite(future) or future <= 0:
         raise ValueError("INVALID_UNDERLYING")
     setups = eligible(state, setups, now, execution_event)
@@ -134,7 +139,15 @@ def process(state: dict, setups: list[dict], snapshot: dict, rows: list[dict], n
         if sign*(future-setup["entry"]) > 0:
             execution_event(state, key, 'WAITING_ENTRY_TRIGGER', now)
             continue
-        spot = float(data["NIDX_40000003"]["live_price"])
+        actual_risk = sign*(future-setup['stop'])
+        if actual_risk < PARAMS.min_stop_points or actual_risk > PARAMS.max_stop_points:
+            execution_event(state, key, 'STOP_TOO_TIGHT' if actual_risk < PARAMS.min_stop_points else 'STOP_TOO_WIDE', now)
+            state['seen'].append(key)
+            continue
+        spot_quote = data.get('NIDX_40000003') or {}
+        if spot_quote.get('live_price') is None:
+            raise ValueError('MISSING_SPOT_QUOTE')
+        spot = float(spot_quote['live_price'])
         if not math.isfinite(spot) or spot <= 0:
             raise ValueError("INVALID_SPOT")
         contract = select_contract(rows, spot, setup["side"], now)
@@ -164,6 +177,40 @@ def process(state: dict, setups: list[dict], snapshot: dict, rows: list[dict], n
         return
 
 
+def fetch_quotes(provider, codes: list[str]) -> dict:
+    """Reject slow responses even when their local receipt timestamp is recent."""
+    start = time.monotonic()
+    snapshot = provider.quotes(codes)
+    if time.monotonic()-start > 3:
+        raise ValueError('SLOW_QUOTE_RESPONSE')
+    return snapshot
+
+
+def prepare_options(state: dict, setups: list[dict], data: dict, rows: list[dict], now: pd.Timestamp) -> list[str]:
+    """Prepare both eligible sides before a touch; never invent missing depth."""
+    if state.get('position'):
+        return [state['position']['code']]
+    candidates = eligible(state, setups, now, execution_event)
+    spot = float(data.get('NIDX_40000003', {}).get('live_price', 0))
+    if not math.isfinite(spot) or spot <= 0:
+        return []
+    return sorted({select_contract(rows, spot, s['side'], now)['code'] for s in candidates})
+
+
+def record_feed_wait(state: dict, setups: list[dict], now: pd.Timestamp) -> None:
+    """Do not overwrite filled, cancelled, expired or superseded decisions."""
+    for setup in setups:
+        key = setup['timestamp']+':'+setup['side']
+        if key not in state.get('seen', []) and pd.Timestamp(setup['timestamp']) <= now < pd.Timestamp(setup['valid_until']):
+            execution_event(state, key, 'WAITING_FRESH_UNDERLYING_TICK', now)
+
+
+def tick_is_fresh(latest: dict | None, now: pd.Timestamp, connected: bool) -> bool:
+    """Recheck freshness at execution, after any intervening processing."""
+    return bool(connected and latest is not None and
+                0 <= (now-pd.Timestamp(latest['received_at'])).total_seconds() <= 3)
+
+
 def main() -> None:
     """Run independent paper estimates; recover open positions after process restart."""
     ROOT.mkdir(exist_ok=True)
@@ -177,11 +224,22 @@ def main() -> None:
         state["position"]["data_gap"] = True
     last_observe = 0.0
     ticks = None
+    history_pool = ThreadPoolExecutor(max_workers=1)
+    quote_pool = ThreadPoolExecutor(max_workers=1)
+    history_client, quote_client = INDstocksData(), INDstocksData()
+    history_job = quote_job = None
+    quote_cache = None
+    active_token = None
     while True:
         now = pd.Timestamp.now(tz="Asia/Kolkata")
         try:
             if now.weekday() >= 5 or not "09:15" <= now.strftime("%H:%M") <= "15:30":
                 state["status"] = "OUTSIDE_SESSION"
+                state.pop('error', None)
+                state['tick_status'] = 'OUTSIDE_SESSION'
+                if ticks is not None:
+                    ticks.stop()
+                    ticks = None
             else:
                 # Reload only the market-data token, never broker credentials.
                 from dotenv import dotenv_values
@@ -189,6 +247,12 @@ def main() -> None:
                 token = dotenv_values(Path(__file__).resolve().parents[1]/".env").get("INDSTOCKS_ACCESS_TOKEN")
                 if token:
                     os.environ["INDSTOCKS_ACCESS_TOKEN"] = token
+                    if active_token is not None and token != active_token:
+                        if ticks is not None:
+                            ticks.stop()
+                            ticks = None
+                        quote_cache = None
+                    active_token = token
                 refresh_master(now)
                 future = resolve_future(now)
                 state["future_code"] = "NFO_"+future["SECURITY_ID"]
@@ -196,45 +260,69 @@ def main() -> None:
                     from backend.paper_ticks import PaperTicks
                     ticks = PaperTicks(state['future_code'])
                 elif ticks.code != state['future_code']:
-                    raise ValueError('STREAM_CONTRACT_CHANGED_RESTART_REQUIRED')
-                if time.monotonic()-last_observe >= 60 and not state.get("position"):
-                    monitor_state = observe(ROOT/"indstocks_ob_observations.sqlite", now)
-                    state["current_session_bars"] = monitor_state["today_bars"]
-                    monitor_state["mode"] = "option-paper-estimates"
-                    monitor_state["fill_blocker"] = None
-                    status_tmp = ROOT/"indstocks_ob_status.tmp"
-                    status_tmp.write_text(json.dumps(monitor_state))
-                    status_tmp.replace(ROOT/"indstocks_ob_status.json")
+                    if state.get('position'):
+                        raise ValueError('OPEN_POSITION_CONTRACT_ROLLOVER_REQUIRES_REVIEW')
+                    ticks.stop()
+                    from backend.paper_ticks import PaperTicks
+                    ticks = PaperTicks(state['future_code'])
+                    quote_cache = None
+                if history_job is not None and history_job.done():
+                    try:
+                        monitor_state = history_job.result()
+                        state['current_session_bars'] = monitor_state['today_bars']
+                        monitor_state.update(mode='option-paper-estimates', fill_blocker=None)
+                        status_tmp = ROOT/'indstocks_ob_status.tmp'
+                        status_tmp.write_text(json.dumps(monitor_state))
+                        status_tmp.replace(ROOT/'indstocks_ob_status.json')
+                        state.pop('history_error', None)
+                    except Exception as exc:
+                        state['history_error'] = str(exc) if isinstance(exc, (INDstocksError, ValueError)) else type(exc).__name__
+                    history_job = None
+                if history_job is None and time.monotonic()-last_observe >= 10:
+                    history_job = history_pool.submit(observe, ROOT/'indstocks_ob_v3_observations.sqlite', now, history_client)
                     last_observe = time.monotonic()
-                with sqlite3.connect(ROOT/"indstocks_ob_observations.sqlite") as db:
-                    setups = [json.loads(x[0]) for x in db.execute("SELECT payload FROM observations WHERE accepted=1 ORDER BY timestamp")]
-                codes = [state["future_code"], "NIDX_40000003"]
-                if state.get("position"):
-                    codes.append(state["position"]["code"])
-                elif state.get("needed_option"):
-                    codes.append(state["needed_option"])
-                start = time.monotonic()
-                snapshot = client.quotes(codes)
-                if time.monotonic()-start > 3:
-                    raise ValueError("SLOW_QUOTE_RESPONSE")
-                now = pd.Timestamp.now(tz="Asia/Kolkata")
+                with sqlite3.connect(ROOT/"indstocks_ob_v3_observations.sqlite") as db:
+                    db.execute("CREATE TABLE IF NOT EXISTS observations (contract TEXT, timestamp TEXT, side TEXT, accepted INTEGER, payload TEXT, observed_at TEXT, PRIMARY KEY(contract,timestamp,side))")
+                    setups = [json.loads(x[0]) for x in db.execute("SELECT payload FROM observations WHERE accepted=1 AND contract=? ORDER BY timestamp", (state["future_code"],))]
                 buffered, latest, fresh = ticks.drain()
                 state['tick_status'] = 'FRESH' if fresh else 'STALE_OR_DISCONNECTED'
+                state['stream_health'] = ticks.health()
                 state['last_tick_at'] = latest['received_at'] if latest else None
                 if state.get('position'):
                     for tick in buffered:
                         latch_exit(state['position'], tick['price'], pd.Timestamp(tick['received_at']).tz_convert('Asia/Kolkata'))
-                    # Commit the crossing before attempting the option fill.
                     save_state(JOURNAL, state)
+                if quote_job is not None and quote_job.done():
+                    try:
+                        quote_cache = quote_job.result()
+                        state.pop('quote_error', None)
+                    except Exception as exc:
+                        quote_cache = None
+                        state['quote_error'] = str(exc) if isinstance(exc, (INDstocksError, ValueError)) else type(exc).__name__
+                    quote_job = None
+                rows = json.loads((ROOT/'indstocks_fno.json').read_text())
+                codes = [state['future_code'], 'NIDX_40000003']
+                cached_data = quote_cache['data'] if quote_cache else {}
+                codes += prepare_options(state, setups, cached_data, rows, now)
+                if state.get('needed_option') and state['needed_option'] not in codes:
+                    codes.append(state['needed_option'])
+                if quote_job is None:
+                    quote_job = quote_pool.submit(fetch_quotes, quote_client, codes)
+                if quote_cache is None:
+                    raise ValueError(state.get('quote_error', 'WAITING_OPTION_SNAPSHOT'))
+                snapshot = deepcopy(quote_cache)
+                # Quote futures may complete after the loop-start timestamp.
+                now = pd.Timestamp.now(tz="Asia/Kolkata")
+                if (now-pd.Timestamp(snapshot['received_at'])).total_seconds() > 3:
+                    raise ValueError('STALE_OPTION_SNAPSHOT')
+                fresh = tick_is_fresh(latest, now, fresh)
                 if fresh:
-                    snapshot['rest_underlying_price'] = snapshot['data'][state['future_code']]['live_price']
-                    snapshot['data'][state['future_code']]['live_price'] = latest['price']
+                    snapshot['rest_underlying_price'] = (snapshot['data'].get(state['future_code']) or {}).get('live_price')
+                    snapshot['data'][state['future_code']] = {**(snapshot['data'].get(state['future_code']) or {}), 'live_price': latest['price']}
                     snapshot['underlying_tick'] = latest
                     state['execution_source'] = 'STREAM_TRIGGER_REST_OPTION_DEPTH'
                 elif not state.get('position'):
-                    for setup in setups:
-                        if pd.Timestamp(setup['timestamp']) <= now < pd.Timestamp(setup['valid_until']):
-                            execution_event(state, setup['timestamp']+':'+setup['side'], 'WAITING_FRESH_UNDERLYING_TICK', now)
+                    record_feed_wait(state, setups, now)
                     raise ValueError('WAITING_FRESH_UNDERLYING_TICK')
                 else:
                     state['execution_source'] = 'REST_EXIT_FALLBACK'
@@ -250,14 +338,14 @@ def main() -> None:
             if state.get("position"):
                 state["position"].update(data_gap=True, mark_stale=True)
         state.update(checked_at=now.isoformat(), orders_enabled=False, estimates_only=True)
-        state['execution_version'] = 'ob-midpoint-v1'
+        state['execution_version'] = 'ob-midpoint-v3'
         state['strategy'] = STRATEGY
         # A journal failure stops this worker before it can simulate another fill.
         save_state(JOURNAL, state)
         temporary = STATE.with_suffix(".tmp")
         temporary.write_text(json.dumps(state, allow_nan=False))
         temporary.replace(STATE)
-        time.sleep(0.5 if state['status'] == 'RUNNING_ESTIMATED_PAPER' else 2 if state['status'] == 'DATA_BLOCKED' else 30)
+        time.sleep(0.25 if state['status'] in ('RUNNING_ESTIMATED_PAPER', 'DATA_BLOCKED') else 30)
 
 
 if __name__ == "__main__":

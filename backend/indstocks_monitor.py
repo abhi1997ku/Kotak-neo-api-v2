@@ -12,6 +12,7 @@ from pathlib import Path
 import pandas as pd
 
 from backend.indstocks_data import client
+from backend.order_block_strategy import STRATEGY
 
 
 
@@ -23,6 +24,9 @@ def completed_bars(candles: list[dict], now: pd.Timestamp) -> tuple[pd.DataFrame
     bars = pd.DataFrame(candles)
     if bars.empty:
         raise ValueError("No historical candles available")
+    # The provider sometimes repeats an entire page. Identical OHLCV rows
+    # are harmless; conflicting prices at one timestamp must remain blocked.
+    bars = bars.drop_duplicates(subset=['ts', 'o', 'h', 'l', 'c', 'v'])
     bars.index = pd.to_datetime(bars.pop("ts"), unit="s", utc=True).dt.tz_convert("Asia/Kolkata")
     bars = bars.rename(columns=dict(o="Open", h="High", l="Low", c="Close", v="Volume"))
     bars = bars.sort_index()
@@ -74,12 +78,12 @@ def refresh_master(now: pd.Timestamp) -> None:
     temporary.replace(path)
 
 
-def observe(database: Path, now: pd.Timestamp) -> dict:
+def observe(database: Path, now: pd.Timestamp, provider=None) -> dict:
     """Persist idempotent observations, explicitly distinguishing replayed setups."""
     future = resolve_future(now)
     code = "NFO_" + future["SECURITY_ID"]
     start = now.normalize() - pd.Timedelta(days=6)
-    history = client.history([code], int(start.timestamp() * 1000), int(now.timestamp() * 1000))
+    history = (provider or client).history([code], int(start.timestamp() * 1000), int(now.timestamp() * 1000))
     one, five = completed_bars(history["data"].get(code, {}).get("candles") or [], now)
     from backend.order_block_strategy import signals, STRATEGY
     setups = signals(five, now)
@@ -100,7 +104,7 @@ def observe(database: Path, now: pd.Timestamp) -> dict:
                 db.execute("INSERT OR IGNORE INTO observations VALUES (?,?,?,?,?,?)",
                            (code, record["timestamp"], record["side"], valid, json.dumps(record), now.isoformat()))
         counts = db.execute("SELECT accepted,COUNT(*) FROM observations WHERE substr(observed_at,1,10)=? GROUP BY accepted", (str(now.date()),)).fetchall()
-    return {"strategy": "order_block_5m_midpoint_2r_v1", "target_r": 2.0, "mode": "signal-observation-only", "contract": future["TRADING_SYMBOL"],
+    return {"strategy": STRATEGY, "target_r": 2.0, "mode": "signal-observation-only", "contract": future["TRADING_SYMBOL"],
             "checked_at": now.isoformat(), "last_closed_bar": str(one.index[-1]) if len(one) else None,
             "today_bars": len(current), "accepted": dict(counts).get(1, 0), "rejected": dict(counts).get(0, 0),
             "orders_enabled": False, "fills_enabled": False, "fill_blocker": "UNVERIFIED_QUOTE_TIME"}
@@ -121,12 +125,12 @@ def main() -> None:
                 state = {"mode": "signal-observation-only", "state": "outside_session", "checked_at": now.isoformat(), "fills_enabled": False}
             else:
                 refresh_master(now)
-                state = observe(ROOT / "indstocks_ob_observations.sqlite", now)
+                state = observe(ROOT / "indstocks_ob_v3_observations.sqlite", now)
         except Exception as exc:
             # Provider error bodies and credentials must never appear in logs.
             state = {"state": "error", "error_type": type(exc).__name__, "checked_at": now.isoformat(), "fills_enabled": False}
         temporary = ROOT / "indstocks_ob_status.tmp"
-        state.update(strategy="order_block_5m_midpoint_2r_v1", target_r=2.0, orders_enabled=False)
+        state.update(strategy=STRATEGY, target_r=2.0, orders_enabled=False)
         temporary.write_text(json.dumps(state))
         temporary.replace(ROOT / "indstocks_ob_status.json")
         print(json.dumps(state), flush=True)

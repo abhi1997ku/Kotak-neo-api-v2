@@ -1,5 +1,17 @@
 import pandas as pd
+import pytest
 from backend.indstocks_monitor import completed_bars
+
+
+def test_duplicate_pages_are_safe_but_conflicting_candles_block():
+    start = pd.Timestamp('2026-11-02 09:15', tz='Asia/Kolkata')
+    candles = [dict(ts=int((start+pd.Timedelta(minutes=i)).timestamp()),
+                    o=100, h=101, l=99, c=100, v=10) for i in range(5)]
+    one, five = completed_bars(candles + candles, start+pd.Timedelta(minutes=5))
+    assert len(one) == 5 and len(five) == 1
+    assert five.iloc[0].Volume == 50
+    with pytest.raises(ValueError, match='Duplicate candle timestamps'):
+        completed_bars(candles + [{**candles[0], 'c': 101}], start+pd.Timedelta(minutes=5))
 
 
 def test_partial_bars_and_missing_context_minutes_excluded():

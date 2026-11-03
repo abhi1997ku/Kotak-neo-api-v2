@@ -1,151 +1,128 @@
 # Kotak Neo Personal Trading Terminal
 
-A local React + FastAPI trading dashboard for a single Kotak Neo account. It includes watchlists and live quotes, option chains, positions, a Holdings panel in the left sidebar with a sell workflow, an order book, and a swing-trade screener. Buy, sell, and position-exit actions use an order ticket popup. The repository also contains the Kotak Neo Python SDK and its endpoint references under [docs](docs/).
+A Windows desktop-launched trading dashboard built with React, TypeScript and FastAPI. The live terminal connects to Kotak Neo; the separate paper workspace uses INDstocks market data. This repository also contains the Kotak Neo Python SDK, research tools and endpoint references.
 
-## Requirements
+**Resetting your PC? Complete the [backup checklist](docs/WINDOWS_RECOVERY.md#before-resetting-windows) before deleting or resetting anything.** Git restores the code and setup scripts. Your private `.env`, saved trading data and browser logins need a separate backup.
 
-- Windows 10/11 with PowerShell and Git for Windows
-- Python 3.10-3.13 (Python 3.12 recommended)
-- Node.js 18 or 20+ with npm
-- A Kotak Neo account with an active Trade API application
+## Restore on a fresh Windows PC
 
-## First-time setup on Windows
+1. Install [Git for Windows](https://git-scm.com/downloads/win), then clone your repository:
 
-Run these commands from the repository root after cloning it.
+   ```powershell
+   git clone https://github.com/abhi1997ku/Kotak-neo-api-v2.git
+   cd Kotak-neo-api-v2
+   ```
 
-### 1. Configure Kotak Neo
+   You can also use GitHub's **Code > Download ZIP**, then extract the entire folder before continuing. Keep the folder somewhere permanent; desktop shortcuts point to it.
 
-Create your local environment file:
+2. Double-click **[Setup.cmd](Setup.cmd)** in the project folder. Keep the window open until setup reports success. The first run needs an internet connection. Native Windows installer or security prompts may appear when missing software is installed.
 
-```powershell
-if (-not (Test-Path .env)) { Copy-Item .env.example .env }
-notepad .env
-```
+3. Restore your private root `.env` from backup, or edit the `.env` that setup created. Restore any saved data using the [recovery guide](docs/WINDOWS_RECOVERY.md#after-resetting-windows), while the app is stopped.
 
-Set these values in the root `.env`:
+4. Double-click **Kotak Neo Terminal - Start** on your desktop. The live and paper dashboards open in your browser. Log in to Kotak with a fresh TOTP and your MPIN. Use **Kotak Neo Terminal - Stop** when you want to stop the app's background processes.
 
-| Variable | Value |
+After the one-time setup and account configuration, the desktop Start and Stop shortcuts are the normal controls. Closing a browser tab does not stop the backend or its workers.
+
+### What setup installs
+
+`Setup.cmd` runs `setup.ps1`. It checks for Python 3.14 and Node.js 22 or newer with npm, installs missing runtimes through Windows Package Manager (`winget`), creates an isolated `.venv`, installs the pinned Python packages from `requirements-windows.lock.txt`, runs `npm ci` in `frontend`, and creates desktop shortcuts. It copies `.env.example` to `.env` only when `.env` is missing.
+
+The Python lockfile captures this project's working environment, including research, test and indicator-observer packages. Python 3.14 and Node.js 24 are the versions used by the existing working installation. If Node is missing or too old, setup installs the LTS version supplied by the `OpenJS.NodeJS.LTS` package.
+
+Start also checks setup automatically. Dependencies are installed again when the dependency files or runtime change, or when the local installation is missing. An ordinary launch with a current installation skips package installation. The launcher builds the frontend and runs the servers in the background.
+
+Use Windows 10/11 with Windows PowerShell 5.1 or later. If `winget` is unavailable, install or update Microsoft's **App Installer**, or install [Python 3.14](https://www.python.org/downloads/windows/) and [Node.js](https://nodejs.org/en/download) manually, reopen the setup window, and run `Setup.cmd` again. Git is needed for cloning and pulling; Download ZIP works without it.
+
+Setup cannot restore your broker credentials, generate account tokens or recover deleted local trading history. It does not log in or place orders.
+
+## Account configuration
+
+Edit **`.env` in the project root**. The backend does not use `backend/.env`.
+
+| Variable | What to enter |
 | --- | --- |
 | `KOTAK_CONSUMER_KEY` | Consumer key from your active Kotak Neo Trade API application |
-| `KOTAK_MOBILE` | Mobile number registered with Kotak, including country code, such as `+91...` |
+| `KOTAK_MOBILE` | Registered mobile number including country code, such as `+91...` |
 | `KOTAK_UCC` | Your Kotak Neo UCC |
-| `KOTAK_ENVIRONMENT` | Leave as `prod` for the live Kotak service |
+| `KOTAK_ENVIRONMENT` | `prod` for the live Kotak service |
+| `INDSTOCKS_ACCESS_TOKEN` | Optional market-data token for the paper workspace; generate it through your INDstocks account |
 
-The login page asks for a fresh six-digit TOTP and your MPIN. Do not save a TOTP code in `.env`; it expires quickly. The backend reads this root `.env` file. It does not read `backend/.env`.
+Enter a fresh TOTP and your MPIN in the login form. Do not save an expiring TOTP code in `.env`. Restart the app after changing `.env`.
 
-In the Kotak API application settings, whitelist the public outbound IP address of the computer or server running the backend. If the backend runs on another machine or in the cloud, whitelist that host's egress IP, not the browser computer's address. Use a static egress IP if the address changes.
+Keep `.env` private; Git ignores it. In Kotak's API application settings, check the backend computer's whitelisted public outbound IP after reinstalling Windows or changing your connection. A fresh installation also requires a new browser login. Restarting the backend clears its in-memory Kotak session.
 
-Keep `.env` private. It is excluded from Git.
+## Daily controls
 
-### 2. Install backend dependencies
+| Control | Result |
+| --- | --- |
+| **Kotak Neo Terminal - Start** / `Start Trading Terminal.cmd` | Starts live and paper workspaces, including the paper workers |
+| **Kotak Neo Terminal - Stop** / `Stop Trading Terminal.cmd` | Stops both workspaces and their launcher-managed workers |
+| **Kotak Neo Paper - Start** / `Start Paper Research.cmd` | Starts only paper research |
+| **Kotak Neo Paper - Stop** / `Stop Paper Research.cmd` | Stops only paper research |
+| `Setup.cmd` | Checks installation and refreshes desktop shortcuts |
 
-Use a supported Python version from 3.10 through 3.13. Replace 3.12 in the command below if needed.
+| Workspace | Dashboard | Backend and health check |
+| --- | --- | --- |
+| Live trading | [localhost:5173](http://localhost:5173/) | [127.0.0.1:8001/health](http://127.0.0.1:8001/health), `backend.live_app:app` |
+| Paper research | [localhost:5174](http://localhost:5174/?workspace=paper) | [127.0.0.1:8003/health](http://127.0.0.1:8003/health), `backend.indstocks_app:app` |
 
-```powershell
-py -3.12 -m venv .venv
-.venv/Scripts/python.exe -m pip install --upgrade pip
-.venv/Scripts/python.exe -m pip install -r requirements.txt
-```
+Start leaves an already running workspace in place. To deliberately restart it, use the commands in [SERVER_COMMANDS.md](SERVER_COMMANDS.md). Restarting clears the broker login. Review [managed-trade recovery](docs/MANAGED_LIVE.md) before stopping or resetting a machine with locally managed positions.
 
-### 3. Install frontend dependencies
+If you move the project folder, run `Setup.cmd` again to refresh the shortcut paths. A Python virtual environment cannot be restored by copying it from another PC; setup recreates the installation.
 
-```powershell
-Set-Location frontend
-npm ci
-Set-Location ..
-```
+## Update from Git
 
-### 4. Start the app
-
-```powershell
-powershell.exe -ExecutionPolicy Bypass -File ./run_servers.ps1 -Action start
-```
-
-Open [http://localhost:5173](http://localhost:5173). The backend is at [http://localhost:8001](http://localhost:8001), its health check is [http://localhost:8001/health](http://localhost:8001/health), and interactive API docs are at [http://localhost:8001/docs](http://localhost:8001/docs).
-
-The start script runs both servers in the background and writes logs to the repository root. Use [SERVER_COMMANDS.md](SERVER_COMMANDS.md) for start, stop, restart, and status commands.
-
-## Updating after a Git pull
-
-From the repository root:
+Stop the app, then run this from the project folder:
 
 ```powershell
-git pull
-.venv/Scripts/python.exe -m pip install -r requirements.txt
-Set-Location frontend
-npm ci
-Set-Location ..
-powershell.exe -ExecutionPolicy Bypass -File ./run_servers.ps1 -Action restart
+git pull --ff-only
 ```
 
-The root `.env` is ignored by Git and stays on your machine. The guarded copy command above leaves an existing `.env` untouched. Repeating the dependency installation commands after a pull keeps the local Python and Node packages aligned with the repository.
+Double-click the desktop Start shortcut afterward. It checks for dependency changes automatically; there is no need to run pip or npm commands for a normal update. `git pull` preserves ignored local files such as `.env` and databases. A new clone does not contain those files.
 
-## Manual development startup
+If Git reports local changes or a conflict, keep the files and resolve the conflict before continuing. See [Git upload and reset recovery](docs/WINDOWS_RECOVERY.md).
 
-For visible foreground servers, open two PowerShell windows at the repository root.
+## Files and documentation
 
-Backend:
+| Path | Purpose |
+| --- | --- |
+| `setup.ps1`, `Setup.cmd` | First-run installation and dependency checks |
+| `run_servers.ps1` | Start, stop, restart and status commands |
+| `create_desktop_shortcuts.ps1` | Creates shortcuts for this folder's location |
+| `requirements-windows.lock.txt` | Pinned Python installation used by Windows setup |
+| `requirements.txt`, `requirements-research.txt` | Python dependency lists for manual development and research |
+| `frontend/package-lock.json` | Frontend dependency versions used by `npm ci` |
+| `frontend/` | React dashboard |
+| `backend/`, `neo_api_client/` | API services and Kotak SDK |
+| `screener/`, `indicators/` | Research and indicator tools |
+| `backend/data/`, local `*.db` / `*.sqlite*` files | Saved application state and research data; see the backup guide |
+| `.runtime/` | Local setup and process records; recreated on this PC |
 
-```powershell
-.venv/Scripts/python.exe -m uvicorn backend.main:app --host 127.0.0.1 --port 8001 --reload
-```
+Further reading:
 
-Frontend:
+- [Start, stop, status and troubleshooting](SERVER_COMMANDS.md)
+- [PC reset, private backups and Git upload](docs/WINDOWS_RECOVERY.md)
+- [Live trading workspace](docs/LIVE_TRADING.md) and [managed target/stop orders](docs/MANAGED_LIVE.md)
+- [INDstocks paper data](docs/indstocks-paper-data.md), [intraday stocks](docs/INTRADAY_STOCKS.md) and [swing research](docs/SWING_EXPECTANCY.md)
+- [Architecture notes](IMPLEMENTATION_GUIDE.md) and [Kotak endpoint references](docs/)
+- [Indicator research](indicators/README.md)
 
-```powershell
-Set-Location frontend
-npm run dev -- --host 127.0.0.1 --port 5173
-```
+### Optional indicator observer
 
-## What runs in this repository
+The indicator observer is separate from the desktop trading Start/Stop controls. Its Python package is included in the Windows lockfile. It uses installed Microsoft Edge and needs its own website login and chart configuration; no separate browser download is required for the current observer.
 
-- `frontend/`: React, TypeScript, and Vite dashboard
-- `backend/`: FastAPI routes and the Kotak client/session wrapper
-- `neo_api_client/`: local Kotak Neo Python SDK
-- `screener/`: swing-trade scanner
-- `backend/data/nifty50_constituents.csv`: fallback list of Nifty 50 constituents
-- `docs/`: Kotak SDK endpoint references
-- `run_servers.ps1`: Windows background server helper
-
-The backend keeps the Kotak login session in memory. Log in again after restarting the backend or after Kotak expires the session. Live prices and option data depend on the broker session, broker market data, and available instrument tokens.
-
-AMO orders are currently rejected by the backend with a service-unavailable response. Submit AMO orders through Kotak Neo directly until this route is re-enabled.
-
-## Swing-trade research scanner
-
-The scanner defaults to **Current F&O stocks**. It resolves stock underlyings from Kotak's `nse_fo` scrip master and also offers Nifty 50 and Nifty 500 universes. The F&O universe needs a Kotak login. If Kotak's live master is unavailable, a dated local SDK copy can supply symbol membership with a visible warning; cached derivative tokens are not used to fetch live derivatives quotes.
-
-The experimental AI pattern section uses a local nearest-neighbour model over daily OHLCV history. It compares each latest chart state with completed 3-, 10-, and 20-session historical windows, then displays the number of analogs and their observed outcomes. This is not a forecast, probability, or validated backtest. The historical sample uses today's eligible F&O names, so it has survivorship bias. Entry, stop, and target levels refer to the underlying shares; derivative premium, contract liquidity, and margin are not modelled. The scanner does not submit orders.
-
-The **Signal performance** panel saves newly generated rule-based and AI-pattern candidates (except `AVOID` and `NO TRADE`) to the local `screener_results.db` and tracks them for 10 completed trading sessions (about two weeks). It waits for a later daily candle to touch the entry zone, then records target/stop exits or a 10-session close. Repeated scans of the same symbol/setup/source on one date are logged once. The panel refreshes automatically every five minutes while open and has a manual refresh button. A daily candle that touches both the stop and a target is counted conservatively as a stop. Results use the underlying share price, not option premiums, and do not include fees or slippage. Existing signals from before this tracker was installed are not backfilled; no paper or live orders are placed.
-
-Daily OHLCV history comes from Yahoo Finance. Kotak provides shortlisted live quotes and, when its current F&O master is available, derivative snapshots. FII/DII, delivery-volume, and corporate-event reports remain separate research checks; upload authorized reports in the scanner when needed. No AI provider key or new environment variable is required.
-
-The API accepts `GET /api/screener/scan?universe=fno`, `universe=nifty50`, or `universe=nifty500`, and `GET /api/screener/signal-performance` to refresh the tracked results. See the dashboard's research coverage and warnings for source freshness and missing data.
+Use the observer launchers and read [MULTI_OBSERVER.md](indicators/research/MULTI_OBSERVER.md) for chart setup. Close its own console with Ctrl+C to stop capture. Its private browser profile is stored outside the repository in `%LOCALAPPDATA%\INDstocksIndicatorObserver`.
 
 ## Troubleshooting
 
-| Symptom | Check |
+| Symptom | Action |
 | --- | --- |
-| Login says consumer key is missing | Confirm you edited the root `.env`, then restart the backend |
-| Kotak rejects login or order requests | Check the consumer key, current TOTP, UCC/mobile number, and the backend host's whitelisted public IP |
-| Page says session expired after restart | This is expected; the backend session is in memory. Log in again |
-| Start script says Python environment not found | Create `.venv` and install `requirements.txt` as shown above |
-| `npm ci` or start script cannot find npm | Install Node.js 18 or 20+ and reopen PowerShell |
-| Port 5173 or 8001 is already in use | Stop the other process or use [SERVER_COMMANDS.md](SERVER_COMMANDS.md) to stop this app |
-| Symbols appear without live prices | Confirm login and check the backend log for Kotak instrument-master or token errors; the constituent list alone does not provide live prices |
-
-## Further documentation
-
-- [Windows server commands](SERVER_COMMANDS.md)
-- [Architecture and API notes](IMPLEMENTATION_GUIDE.md)
-- [Kotak API endpoint references](docs/)
-## One-click desktop controls
-
-The desktop shortcuts Kotak Neo Terminal - Start and Kotak Neo Terminal - Stop start or stop both servers. The server processes run in the background; the launcher window shows the result and waits for a key before closing. Start leaves both occupied app ports untouched, so clicking it again will not restart the session. Use the Restart command in SERVER_COMMANDS.md when you intend to restart the app.
-
-You can also double-click Start Trading Terminal.cmd or Stop Trading Terminal.cmd in the repository folder. After pulling the repository onto another Windows computer, create its desktop shortcuts once by running this from the repository root:
-
-    powershell.exe -ExecutionPolicy Bypass -File ./create_desktop_shortcuts.ps1
-
-If you move the repository folder, rerun that command to update the shortcut paths.
+| Setup cannot find Python, Node or npm | Run `Setup.cmd` again after installation completes; reopen the window to refresh PATH. See the manual installation links above. |
+| Setup or package download fails | Read the error in the open window, check the internet connection and rerun `Setup.cmd`. Existing `.env` is preserved. |
+| Desktop shortcut opens an old or missing folder | Run `Setup.cmd` from the current project folder. |
+| Login says consumer key is missing | Edit the root `.env`, then restart the live workspace. |
+| Login expires after restart | Log in again with a fresh TOTP and MPIN. |
+| Broker login or requests fail | Check your key, UCC/mobile, token validity and the broker's whitelisted public IP. |
+| A required port is occupied | Use status in [SERVER_COMMANDS.md](SERVER_COMMANDS.md). The launcher reports unrelated processes rather than stopping them. |
+| Paper data is missing after a fresh clone | Restore your private data backup and configure a valid INDstocks token. Git alone does not restore local history. |
+| Dashboard fails to load | Check the backend and frontend error logs listed in [SERVER_COMMANDS.md](SERVER_COMMANDS.md). |

@@ -3,6 +3,21 @@ import pytest
 from backend.option_paper import depth_fill, select_contract, process
 
 
+def test_tick_expires_during_loop_processing():
+    from backend.option_paper import tick_is_fresh
+    now = pd.Timestamp('2026-11-02 13:00', tz='Asia/Kolkata')
+    tick = {'received_at': now.isoformat(), 'price': 55000}
+    assert tick_is_fresh(tick, now+pd.Timedelta(seconds=2), True)
+    assert not tick_is_fresh(tick, now+pd.Timedelta(seconds=4), True)
+    assert not tick_is_fresh(tick, now, False)
+
+
+def test_missing_underlying_has_actionable_error():
+    now = pd.Timestamp('2026-11-02 13:00', tz='Asia/Kolkata')
+    with pytest.raises(ValueError, match='MISSING_UNDERLYING_QUOTE'):
+        process({'future_code': 'F'}, [], {'received_at': now.isoformat(), 'data': {}}, [], now)
+
+
 def test_contract_two_strikes_itm():
     rows = [{"EXCH": "NSE", "INSTRUMENT_NAME": "OPTIDX", "TRADING_SYMBOL": f"BANKNIFTY-X-{k}-{kind}",
              "OPTION_TYPE": kind, "EXPIRY_DATE": "2026-10-27", "STRIKE_PRICE": str(k), "LOT_UNITS": "30", "SECURITY_ID": str(k)}
@@ -73,3 +88,46 @@ def test_entry_expiry_is_audited():
     state = {'position': None, 'trades': [], 'seen': [], 'started_at': '2026-10-21T09:00:00+05:30', 'future_code': 'F'}
     process(state, [setup], {'received_at': now.isoformat(), 'data': {'F': {'live_price': 100}}}, [], now)
     assert state['execution_events'][0]['reason'] == 'ENTRY_EXPIRED'
+
+
+def test_feed_wait_preserves_terminal_decisions():
+    from backend.option_paper import record_feed_wait
+    now = pd.Timestamp('2026-10-28 14:00', tz='Asia/Kolkata')
+    setup = {'timestamp': '2026-10-28T13:25:00+05:30', 'side': 'short',
+             'valid_until': '2026-10-28T15:00:00+05:30'}
+    key = setup['timestamp']+':short'
+    state = {'seen': [key], 'execution_decisions': {key: {'reason': 'FILLED'}}}
+    record_feed_wait(state, [setup], now)
+    assert state['execution_decisions'][key]['reason'] == 'FILLED'
+    assert not state.get('execution_events')
+
+
+def test_prefetch_before_touch(monkeypatch):
+    import backend.option_paper as engine
+    now = pd.Timestamp('2026-10-28 10:00', tz='Asia/Kolkata')
+    monkeypatch.setattr(engine, 'eligible', lambda *args: [{'side': 'long'}, {'side': 'short'}])
+    monkeypatch.setattr(engine, 'select_contract', lambda rows, spot, side, now: {'code': side})
+    assert engine.prepare_options({}, [], {'NIDX_40000003': {'live_price': 54000}}, [], now) == ['long', 'short']
+    assert engine.prepare_options({'position': {'code': 'held'}}, [], {}, [], now) == ['held']
+
+
+def test_slow_quote_rejected(monkeypatch):
+    import backend.option_paper as engine
+    from types import SimpleNamespace
+    times = iter([0, 4])
+    monkeypatch.setattr(engine.time, 'monotonic', lambda: next(times))
+    with pytest.raises(ValueError, match='SLOW_QUOTE_RESPONSE'):
+        engine.fetch_quotes(SimpleNamespace(quotes=lambda codes: {'received_at': 'fresh'}), ['F'])
+
+
+def test_history_request_does_not_block_quote_worker():
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+    release = Event()
+    with ThreadPoolExecutor(max_workers=1) as history, ThreadPoolExecutor(max_workers=1) as quotes:
+        blocked = history.submit(release.wait, 2)
+        try:
+            assert quotes.submit(lambda: 'quote').result(timeout=1) == 'quote'
+            assert not blocked.done()
+        finally:
+            release.set()

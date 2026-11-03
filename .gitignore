@@ -6,13 +6,15 @@
 
 # Python environments and generated files
 .venv/
+venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
 *.egg-info/
+build/
 
 # Frontend dependencies and build output
-frontend/node_modules/
+node_modules/
 frontend/dist/
 frontend/dist-live/
 frontend/dist-paper/
@@ -23,10 +25,36 @@ frontend/dist-paper/
 *.db
 *.sqlite
 *.sqlite3
-backend/data/indstocks_*.json
-backend/data/indstocks_*.tmp
+*.db-wal
+*.db-shm
+*.db-journal
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
+*.sqlite3-wal
+*.sqlite3-shm
+*.sqlite3-journal
+# Generated market caches, journals, local trading state and replay reports.
+# Retain only the public constituent fallback files required by the app.
+backend/data/*
+!backend/data/nifty50_constituents.csv
+!backend/data/nifty500_constituents.csv
 screener/index_research_cache/
 screener/training_data/
+.runtime/
+
+# Observer captures and browser profiles can contain session credentials.
+indicators/research/sessions/
+indicators/research/captures/
+indicators/research/profiles/
+indicators/research/browser-profile/
+indicators/research/browser_profile/
+indicators/research/*.json
+indicators/research/*.jsonl
+
+# Local reset backups may include credentials and trading history
+backups/
+*.local-backup.zip
 
 # OS files
 .DS_Store

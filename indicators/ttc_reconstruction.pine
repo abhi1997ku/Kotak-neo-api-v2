@@ -1,0 +1,32 @@
+//@version=6
+// Independent reconstruction from visible levels. Automatic base selection is unknown.
+indicator("Square-root TTC reconstruction (experimental)", overlay = true, max_lines_count = 100, max_labels_count = 100)
+base = input.float(961.0, "Base price (copy original BASE)", minval = 0.01)
+above = input.int(10, "Levels above base", minval = 0, maxval = 40)
+below = input.int(10, "Levels below base", minval = 0, maxval = 40)
+step = input.float(0.5, "Square-root step", minval = 0.01)
+showLabels = input.bool(true, "Show labels")
+showPrices = input.bool(true, "Show prices")
+width = input.int(1, "Line width", minval = 1, maxval = 4)
+days = input.int(20, "Calendar days to show", minval = 1, maxval = 365)
+upColor = input.color(color.blue, "Levels above base")
+downColor = input.color(color.red, "Levels below base")
+baseColor = input.color(color.black, "Base level")
+var lines = array.new<line>()
+var labels = array.new<label>()
+if barstate.islast
+    for item in lines
+        line.delete(item)
+    for item in labels
+        label.delete(item)
+    array.clear(lines)
+    array.clear(labels)
+    for i = -below to above
+        root = math.sqrt(base) + i * step
+        if root > 0
+            level = root * root
+            tint = i == 0 ? baseColor : i > 0 ? upColor : downColor
+            array.push(lines, line.new(time - days * 86400000, level, time, level, xloc = xloc.bar_time, color = tint, width = width))
+            if showLabels or showPrices
+                caption = (showLabels ? (i == 0 ? "BASE" : (i > 0 ? "R" : "S") + str.tostring(math.abs(i))) : "") + (showPrices ? " " + str.tostring(level, "#.##") : "")
+                array.push(labels, label.new(time, level, caption, xloc = xloc.bar_time, style = label.style_label_left, color = color.new(color.white, 100), textcolor = tint))

@@ -57,6 +57,82 @@ def trigger(manager, broker, price=110):
     manager.tick(broker, price, time.time())
 
 
+def test_limit_entry_does_not_exit_on_price_until_confirmed_fill(setup):
+    m, b = setup
+    req = request(entry_type="L", entry_limit=100)
+    m.create(req, b)
+    for premium in (125, 90, 110):
+        trigger(m, b, premium)
+    assert m.get(req.request_id)["state"] == "WAITING_ENTRY"
+    assert [call[0] for call in b.calls] == ["entry"]
+    b.fill_entry(75, True)
+    m.reconcile(b)
+    trigger(m, b, 90)
+    assert m.get(req.request_id)["selected_leg"] == "stop"
+    assert b.calls[-1][:2] == ("exit", 75)
+
+
+@pytest.mark.parametrize("segment", ["nse_fo", "bse_fo"])
+def test_attach_existing_position_sends_no_entry_and_exits_once(setup, segment):
+    m, b = setup
+    b.net = 150
+    req = request(quantity=150, exchange_segment=segment)
+    row = m.create(req, b, attach=True)
+    assert row["state"] == "ARMED" and row["entry_id"] is None
+    assert row["entry_filled"] == 150 and not b.calls
+    assert m.create(req, b, attach=True)["request_id"] == row["request_id"]
+    with pytest.raises(ValueError, match="another trade"):
+        m.create(req, b)
+    m.edit(req.request_id, edit_prices(), b, {"ltp": 100, "received_at": time.time()})
+    trigger(m, b, 120)
+    trigger(m, b, 90)
+    assert [c[:2] for c in b.calls] == [("exit", 150)]
+    b.book[0].update(status="complete", filled=150, average=119)
+    b.net = 0
+    m.reconcile(b)
+    assert m.get(req.request_id)["state"] == "CLOSED"
+
+
+@pytest.mark.parametrize("net", [0, -75, 50, 150])
+def test_attach_rejects_changed_or_short_position(setup, net):
+    m, b = setup
+    b.net = net
+    with pytest.raises(ValueError, match="Position changed"):
+        m.create(request(), b, attach=True)
+    assert not b.calls and not m.list()
+
+
+def test_attach_rejects_pending_order_and_blocks_external_position_change(setup):
+    m, b = setup
+    req = request()
+    b.net = 75
+    b.book = [{"id": "existing", "symbol": req.symbol, "status": "open"}]
+    with pytest.raises(ValueError, match="pending orders"):
+        m.create(req, b, attach=True)
+    b.book.clear()
+    m.create(req, b, attach=True)
+    b.net = 25
+    trigger(m, b)
+    assert not b.calls
+    assert m.get(req.request_id)["state"] == "ATTENTION"
+
+
+def test_attached_position_restart_reconciles_without_entry_order(setup):
+    m, b = setup
+    b.net = 75
+    m.create(request(), b, attach=True)
+    restored = LiveManager(m.db.execute("PRAGMA database_list").fetchone()[2])
+    try:
+        assert restored.get("preview-123")["state"] == "RECOVERY"
+        restored.reconcile(b, explicit=True)
+        assert restored.get("preview-123")["state"] == "ARMED"
+        restored.action("preview-123", "release", b)
+        assert restored.get("preview-123")["state"] == "RELEASED"
+        assert not b.calls
+    finally:
+        restored.db.close()
+
+
 def edit_prices(**changes):
     return ManagedTradeEdit(**dict({"revision": 0, "target_trigger": 120, "target_limit": 119,
                                    "stop_trigger": 96, "stop_limit": 95}, **changes))
@@ -317,3 +393,20 @@ def test_route_rejects_missing_login(monkeypatch):
     with pytest.raises(HTTPException) as error:
         asyncio.run(routes.create_managed(request()))
     assert error.value.status_code == 409
+
+
+def test_panel_rolls_over_completed_history_without_losing_unresolved_trades(monkeypatch):
+    import asyncio
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+    from backend.managed_live_service import LiveService
+    rows = [{"request_id": state, "trade_date": "2026-10-26", "state": state}
+            for state in ("CLOSED", "CANCELLED", "RELEASED", "RECOVERY", "ENTRY_UNKNOWN", "EXIT_PENDING")]
+    manager = SimpleNamespace(list=Mock(return_value=rows))
+    service = LiveService(manager)
+    monkeypatch.setattr(service, "broker", lambda: SimpleNamespace(account="account"))
+    monkeypatch.setattr("backend.managed_live_service.today", lambda: "2026-10-26")
+    assert len(asyncio.run(service.snapshot())["trades"]) == 6
+    monkeypatch.setattr("backend.managed_live_service.today", lambda: "2026-10-27")
+    assert {r["state"] for r in asyncio.run(service.snapshot())["trades"]} == {"RECOVERY", "ENTRY_UNKNOWN", "EXIT_PENDING"}
+    assert len(rows) == 6  # Durable duplicate-submission protection is retained.

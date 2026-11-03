@@ -1,5 +1,6 @@
 # from neo_api_client import NeoAPI
 import io
+import os
 import neo_api_client
 import threading
 
@@ -13,10 +14,14 @@ def on_error(message):
     print('[OnError]: ', result)
 
 
-client = neo_api_client.NeoAPI(consumer_key="f1X7OfHF2zLjMtSTT7C1PnLWDd0a",
-                               consumer_secret="p3JilRTebrOUNBCfO8yQ_AhuKv0a", environment='prod',
-                               on_message=on_message,
-                               on_error=on_error)
+# This legacy SDK example reads credentials from the environment.
+# Use the desktop terminal or example_usage.py for the current TOTP login flow.
+client = neo_api_client.NeoAPI(
+    consumer_key=os.environ["KOTAK_CONSUMER_KEY"],
+    environment=os.getenv("KOTAK_ENVIRONMENT", "prod"),
+)
+client.on_message = on_message
+client.on_error = on_error
 # client = neo_api_client.NeoAPI(access_token='',
 #                                environment='prod', on_message=on_message,
 #                                on_error=on_error)

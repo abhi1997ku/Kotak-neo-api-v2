@@ -65,6 +65,8 @@ export interface Order {
 }
 
 export interface Trade {
+  product?: string;
+  exchange_segment?: string;
   trade_id: string;
   order_id?: string;
   symbol: string;
@@ -277,8 +279,8 @@ class KotakNeoAPI {
   async getPaperDayAudit(): Promise<any> { return this.request(`/paper-trading/day-audit`, { method: "GET" }); }
   getPaperReportCsvUrl(): string { return `${API_BASE_URL}/paper-trading/report.csv`; }
 
-  async searchSymbol(query: string): Promise<{ results: any[]; message?: string }> {
-    const response = await this.request<any>(`/market/search?query=${encodeURIComponent(query)}`, {
+  async searchSymbol(query: string, exchange = "NSE"): Promise<{ results: any[]; message?: string }> {
+    const response = await this.request<any>(`/market/search?query=${encodeURIComponent(query)}&exchange=${encodeURIComponent(exchange)}`, {
       method: "GET",
     });
 
