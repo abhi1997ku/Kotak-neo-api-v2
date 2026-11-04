@@ -25,7 +25,7 @@ After the one-time setup and account configuration, the desktop Start and Stop s
 
 ### What setup installs
 
-`Setup.cmd` runs `setup.ps1`. It checks for Python 3.14 and Node.js 22 or newer with npm, installs missing runtimes through Windows Package Manager (`winget`), creates an isolated `.venv`, installs the pinned Python packages from `requirements-windows.lock.txt`, runs `npm ci` in `frontend`, and creates desktop shortcuts. It copies `.env.example` to `.env` only when `.env` is missing.
+`Setup.cmd` runs `setup.ps1`. It checks for Python 3.14 and Node.js 22 or newer with npm, installs missing runtimes through [Windows Package Manager (`winget`)](https://learn.microsoft.com/en-us/windows/package-manager/winget/install), creates an isolated `.venv`, installs the pinned Python packages from `requirements.txt` and `requirements-windows.lock.txt`, runs `npm ci` in `frontend`, and creates desktop shortcuts. It copies `.env.example` to `.env` only when `.env` is missing.
 
 The Python lockfile captures this project's working environment, including research, test and indicator-observer packages. Python 3.14 and Node.js 24 are the versions used by the existing working installation. If Node is missing or too old, setup installs the LTS version supplied by the `OpenJS.NodeJS.LTS` package.
 

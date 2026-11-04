@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 import requests
 from backend.indstocks_data import client
-ROOT=Path('backend/data/one_year_research');CACHE=ROOT/'options';CACHE.mkdir(exist_ok=True)
+ROOT=Path('backend/data/one_year_research');CACHE=ROOT/'options';CACHE.mkdir(parents=True, exist_ok=True)
 
 def get_data(path,params):
     for attempt in range(3):

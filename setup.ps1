@@ -69,11 +69,14 @@ function Find-ProjectPython {
 }
 
 function Find-ProjectNode {
-    $command = Get-Command node.exe -ErrorAction SilentlyContinue
-    if ($command) {
-        $versionText = & $command.Source --version 2>$null
+    $candidates = @(Get-Command node.exe -All -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source)
+    $candidates += Join-Path $env:ProgramFiles 'nodejs\node.exe'
+    $candidates += Join-Path $env:LOCALAPPDATA 'Programs\nodejs\node.exe'
+    foreach ($candidate in ($candidates | Select-Object -Unique)) {
+        if (-not (Test-Path -LiteralPath $candidate -PathType Leaf)) { continue }
+        $versionText = & $candidate --version 2>$null
         if ($LASTEXITCODE -eq 0 -and "$versionText" -match '^v(\d+)\.' -and [int]$Matches[1] -ge $minimumNodeMajor) {
-            return $command.Source
+            return $candidate
         }
     }
     return $null
@@ -128,6 +131,7 @@ try {
         $node = Find-ProjectNode
     }
     if (-not $node) { throw "Node.js $minimumNodeMajor or newer is unavailable. Reopen Setup.cmd after installing Node.js LTS." }
+    $env:Path = (Split-Path -Parent $node) + ';' + $env:Path
     $npm = Join-Path (Split-Path -Parent $node) 'npm.cmd'
     if (-not (Test-Path -LiteralPath $npm)) { throw "npm.cmd is missing beside $node. Repair/reinstall Node.js LTS, then rerun Setup.cmd." }
 

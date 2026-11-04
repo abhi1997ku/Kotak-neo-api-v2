@@ -7,7 +7,7 @@ Orders still require submission through the order ticket.
 | Workspace | UI | Backend |
 | --- | --- | --- |
 | Live | http://localhost:5173/ | `backend.live_app:app`, port 8001 |
-| Paper and research | http://localhost:5174/?workspace=paper | `backend.main:app`, port 8003 |
+| Paper and research | http://localhost:5174/?workspace=paper | `backend.indstocks_app:app`, port 8003 |
 
 From the repository root in PowerShell:
 
@@ -33,23 +33,19 @@ instead of directly invoking the script.
 For an already running old backend, restart the live workspace to activate isolation.
 Restarting ends its in-memory login; do this outside active trading.
 
-The two backends hold independent sessions and require separate logins. Whether
-Kotak permits simultaneous sessions depends on the account/API policy. If a paper
-login expires the live session, keep the paper backend stopped during live trading.
-Do not add Uvicorn workers: authentication is stored in process memory.
+The live backend keeps its Kotak login in memory. The paper backend uses the
+separate `INDSTOCKS_ACCESS_TOKEN` market-data connection and exposes no Kotak login
+or broker-order routes. The launcher also starts the intraday and option paper
+workers; stopping the paper workspace stops both workers. Do not add Uvicorn
+workers to the live backend: authentication is stored in process memory.
 
-Paper agents, replay, Nifty 50 quotes, and swing research mount only in the paper
-workspace. The live process does not import research routers or run the daily stock
-paper service. The stock paper panel uses port 8003 as well; a separate server on
-port 8002 is no longer required by the UI.
-The Nifty 50 stock table fetches one snapshot when the authenticated paper workspace
-opens, including after a new login or page reload. It has no stock WebSocket,
-polling, focus refresh, reconnect refresh, or automatic retry. Its price column is
-labelled "Snapshot price" and shows the snapshot timestamp. This removes continuous
-stock-feed traffic and table updates; any improvement to live order acknowledgement
-time still needs measurement. The paper agents' own feeds remain independent.
-Stopping a browser tab does not stop a running paper agent; use its Stop control or
-stop the paper workspace when its work is no longer needed.
+`backend.main:app` is an older combined application and is not launched by the
+desktop controls. The live process does not import its research routers or run
+the daily stock paper service. Closing a browser tab does not stop a server or
+paper worker; use the desktop Stop shortcut.
+
+For installation, updates and restoring after a PC reset, follow
+[README.md](../README.md) and the [recovery guide](WINDOWS_RECOVERY.md).
 
 Indices-only snapshots and streams skip Nifty 50 constituent downloads, cash-market
 master resolution, stock quotes, and stock subscriptions. The order ticket closes
